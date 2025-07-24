@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   ChakraProvider, Box, Flex, Input, Button, Text, VStack, HStack, Heading, useColorMode, IconButton,
-  Avatar, Divider, InputGroup, InputRightElement, Textarea, useDisclosure
+  Avatar, Divider, InputGroup, InputRightElement, Textarea, useDisclosure,
+  Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton,
+  FormControl, FormLabel
 } from "@chakra-ui/react";
 import { SunIcon, MoonIcon, AddIcon, ChatIcon, SettingsIcon, HamburgerIcon } from "@chakra-ui/icons";
 import ReactMarkdown from "react-markdown";
@@ -94,8 +96,11 @@ function App() {
     { id: 1, name: "New Chat" }
   ]);
   const [activeChat, setActiveChat] = useState(1);
+  const [baseUrl, setBaseUrl] = useState("http://localhost:9068/v1");
+  const [tempBaseUrl, setTempBaseUrl] = useState("http://localhost:9068/v1");
   const { colorMode, toggleColorMode } = useColorMode();
   const { isOpen: isSidebarOpen, onToggle: toggleSidebar } = useDisclosure();
+  const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
   const chatRef = useRef(null);
 
   const createNewChat = () => {
@@ -120,6 +125,21 @@ function App() {
         chat.id === chatId ? { ...chat, name: newName } : chat
       )
     );
+  };
+
+  const handleSettingsOpen = () => {
+    setTempBaseUrl(baseUrl);
+    onSettingsOpen();
+  };
+
+  const handleSettingsSave = () => {
+    setBaseUrl(tempBaseUrl);
+    onSettingsClose();
+  };
+
+  const handleSettingsCancel = () => {
+    setTempBaseUrl(baseUrl);
+    onSettingsClose();
   };
 
   const WelcomeScreen = () => (
@@ -167,7 +187,7 @@ function App() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:9068/v1/chat/completions", {
+      const response = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -274,6 +294,7 @@ function App() {
             <HStack justify="space-between">
               <IconButton
                 icon={<SettingsIcon />}
+                onClick={handleSettingsOpen}
                 variant="ghost"
                 size="sm"
                 aria-label="Settings"
@@ -420,6 +441,33 @@ function App() {
           </Box>
         </Flex>
       </Flex>
+
+      {/* Settings Modal */}
+      <Modal isOpen={isSettingsOpen} onClose={handleSettingsCancel}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Settings</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FormControl>
+              <FormLabel>AI Service Base URL</FormLabel>
+              <Input
+                value={tempBaseUrl}
+                onChange={(e) => setTempBaseUrl(e.target.value)}
+                placeholder="http://localhost:9068/v1"
+              />
+            </FormControl>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={handleSettingsCancel}>
+              Cancel
+            </Button>
+            <Button colorScheme="blue" onClick={handleSettingsSave}>
+              Save
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </ChakraProvider>
   );
 }
