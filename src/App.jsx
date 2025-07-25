@@ -3,7 +3,7 @@ import {
   ChakraProvider, Box, Flex, Input, Button, Text, VStack, HStack, Heading, useColorMode, IconButton,
   Avatar, Divider, InputGroup, InputRightElement, Textarea, useDisclosure,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton,
-  FormControl, FormLabel
+  FormControl, FormLabel, Tabs, TabList, TabPanels, Tab, TabPanel, Badge, Select, Checkbox
 } from "@chakra-ui/react";
 import { SunIcon, MoonIcon, AddIcon, ChatIcon, SettingsIcon, HamburgerIcon } from "@chakra-ui/icons";
 import ReactMarkdown from "react-markdown";
@@ -98,6 +98,12 @@ function App() {
   const [activeChat, setActiveChat] = useState(1);
   const [baseUrl, setBaseUrl] = useState("http://localhost:9068/v1");
   const [tempBaseUrl, setTempBaseUrl] = useState("http://localhost:9068/v1");
+  const [activeSettingsTab, setActiveSettingsTab] = useState(0);
+  const [colorTheme, setColorTheme] = useState("Auto");
+  const [language, setLanguage] = useState("English");
+  const [showSideButtonLabels, setShowSideButtonLabels] = useState(false);
+  const [modelGuardrails, setModelGuardrails] = useState("Strict");
+  const [showPresetConfirmation, setShowPresetConfirmation] = useState(false);
   const { colorMode, toggleColorMode } = useColorMode();
   const { isOpen: isSidebarOpen, onToggle: toggleSidebar } = useDisclosure();
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
@@ -348,7 +354,6 @@ function App() {
             px={{ base: 4, md: 6 }}
             py={4}
             pb="120px"
-            bg={colorMode === "dark" ? "gray.800" : "gray.50"}
           >
             {messages.length === 0 ? (
               <WelcomeScreen />
@@ -379,7 +384,6 @@ function App() {
             py={4}
             borderTop="1px"
             borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
-            bg={colorMode === "dark" ? "gray.800" : "gray.50"}
             zIndex={1}
           >
             <Box maxW="600px" mx="auto" w="100%">
@@ -443,22 +447,271 @@ function App() {
       </Flex>
 
       {/* Settings Modal */}
-      <Modal isOpen={isSettingsOpen} onClose={handleSettingsCancel}>
+      <Modal isOpen={isSettingsOpen} onClose={handleSettingsCancel} size="6xl">
         <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Settings</ModalHeader>
+        <ModalContent maxW="800px" maxH="80vh">
+          <ModalHeader
+            borderBottom="1px"
+            borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+            pb={4}
+          >
+            <HStack justify="space-between">
+              <Text fontSize="lg" fontWeight="600">App Settings</Text>
+            </HStack>
+          </ModalHeader>
           <ModalCloseButton />
-          <ModalBody>
-            <FormControl>
-              <FormLabel>AI Service Base URL</FormLabel>
-              <Input
-                value={tempBaseUrl}
-                onChange={(e) => setTempBaseUrl(e.target.value)}
-                placeholder="http://localhost:9068/v1"
-              />
-            </FormControl>
+
+          <ModalBody p={0} maxH="calc(80vh - 140px)" overflowY="auto">
+            <Tabs
+              orientation="vertical"
+              variant="line"
+              h="100%"
+              index={activeSettingsTab}
+              onChange={setActiveSettingsTab}
+            >
+              <TabList
+                w="200px"
+                borderRight="1px"
+                borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+                bg={colorMode === "dark" ? "gray.800" : "gray.50"}
+                p={4}
+              >
+                <Tab
+                  justifyContent="flex-start"
+                  px={4}
+                  py={3}
+                  _selected={{
+                    bg: colorMode === "dark" ? "gray.700" : "white",
+                    borderColor: "blue.500",
+                    color: "blue.500"
+                  }}
+                >
+                  General
+                </Tab>
+                <Tab
+                  justifyContent="flex-start"
+                  px={4}
+                  py={3}
+                  _selected={{
+                    bg: colorMode === "dark" ? "gray.700" : "white",
+                    borderColor: "blue.500",
+                    color: "blue.500"
+                  }}
+                >
+                  Chat
+                </Tab>
+                <Tab
+                  justifyContent="flex-start"
+                  px={4}
+                  py={3}
+                  _selected={{
+                    bg: colorMode === "dark" ? "gray.700" : "white",
+                    borderColor: "blue.500",
+                    color: "blue.500"
+                  }}
+                >
+                  Server
+                </Tab>
+                <Tab
+                  justifyContent="flex-start"
+                  px={4}
+                  py={3}
+                  _selected={{
+                    bg: colorMode === "dark" ? "gray.700" : "white",
+                    borderColor: "blue.500",
+                    color: "blue.500"
+                  }}
+                >
+                  Developer
+                </Tab>
+                <Tab
+                  justifyContent="flex-start"
+                  px={4}
+                  py={3}
+                  _selected={{
+                    bg: colorMode === "dark" ? "gray.700" : "white",
+                    borderColor: "blue.500",
+                    color: "blue.500"
+                  }}
+                >
+                  Integrations
+                </Tab>
+              </TabList>
+
+              <TabPanels
+                flex="1"
+                p={6}
+                bg={colorMode === "dark" ? "gray.800" : "white"}
+                overflowY="auto"
+              >
+                {/* General Tab */}
+                <TabPanel p={0} h="100%">
+                  <VStack spacing={6} align="stretch" h="100%">
+                    {/* App Update Section */}
+                    <Box>
+                      <HStack mb={4}>
+                        <Heading size="md">App Update</Heading>
+                        <Button size="sm" variant="outline" leftIcon={<Text>🔄</Text>}>
+                          Check for updates
+                        </Button>
+                      </HStack>
+                      <Box
+                        bg={colorMode === "dark" ? "gray.700" : "gray.100"}
+                        p={4}
+                        borderRadius="md"
+                      >
+                        <Text mb={2}>You are all up to date! The current version is 0.3.20</Text>
+                        <HStack>
+                          <Text fontSize="sm" color="gray.500">Updates Channel</Text>
+                          <Select size="sm" w="120px" value="Stable">
+                            <option value="Stable">Stable</option>
+                            <option value="Beta">Beta</option>
+                          </Select>
+                        </HStack>
+                      </Box>
+                    </Box>
+
+                    {/* Language Section */}
+                    <Box>
+                      <Heading size="md" color="blue.500" mb={2}>Language</Heading>
+                      <Text fontSize="sm" color="gray.500" mb={4}>
+                        Choose app language (still in development)
+                      </Text>
+                      <FormControl>
+                        <Select value={language} onChange={(e) => setLanguage(e.target.value)}>
+                          <option value="English">English</option>
+                          <option value="Chinese">中文</option>
+                          <option value="Japanese">日本語</option>
+                        </Select>
+                      </FormControl>
+                      <Text fontSize="xs" color="blue.400" mt={2}>
+                        Want to help translate Oji to your language? We would love your help!
+                      </Text>
+                    </Box>
+
+                    {/* General Section */}
+                    <Box>
+                      <Heading size="md" color="blue.500" mb={4}>General</Heading>
+                      <VStack spacing={4} align="stretch">
+                        <FormControl>
+                          <FormLabel fontSize="sm" fontWeight="600">Color Theme</FormLabel>
+                          <HStack spacing={2}>
+                            {["Auto", "Classic", "Light", "Sepia", "Dark", "Solarized Dark"].map((theme) => (
+                              <Button
+                                key={theme}
+                                size="sm"
+                                variant={colorTheme === theme ? "solid" : "outline"}
+                                colorScheme={colorTheme === theme ? "blue" : "gray"}
+                                onClick={() => setColorTheme(theme)}
+                              >
+                                {theme}
+                              </Button>
+                            ))}
+                          </HStack>
+                        </FormControl>
+
+                        <FormControl>
+                          <Checkbox
+                            isChecked={showSideButtonLabels}
+                            onChange={(e) => setShowSideButtonLabels(e.target.checked)}
+                          >
+                            <Text fontSize="sm">Show side button labels</Text>
+                          </Checkbox>
+                        </FormControl>
+
+                        <FormControl>
+                          <FormLabel fontSize="sm" fontWeight="600">
+                            Model loading guardrails
+                            <Text as="span" fontSize="xs" color="gray.500" ml={1}>ⓘ</Text>
+                          </FormLabel>
+                          <Select
+                            value={modelGuardrails}
+                            onChange={(e) => setModelGuardrails(e.target.value)}
+                          >
+                            <option value="None">None</option>
+                            <option value="Moderate">Moderate</option>
+                            <option value="Strict">Strict</option>
+                          </Select>
+                          <Text fontSize="xs" color="gray.500" mt={1}>
+                            Strong precautions against system overload
+                          </Text>
+                        </FormControl>
+
+                        <FormControl>
+                          <Checkbox
+                            isChecked={showPresetConfirmation}
+                            onChange={(e) => setShowPresetConfirmation(e.target.checked)}
+                          >
+                            <Text fontSize="sm">
+                              Presets: Show confirmation dialog when committing new fields to the preset
+                              <Text as="span" fontSize="xs" color="gray.500" ml={1}>ⓘ</Text>
+                            </Text>
+                          </Checkbox>
+                        </FormControl>
+                      </VStack>
+                    </Box>
+                  </VStack>
+                </TabPanel>
+
+                {/* Chat Tab */}
+                <TabPanel p={0}>
+                  <VStack spacing={6} align="stretch">
+                    <Heading size="md">Chat Settings</Heading>
+                    <Text color="gray.500">Chat configuration options will be available here.</Text>
+                  </VStack>
+                </TabPanel>
+
+                {/* Server Tab */}
+                <TabPanel p={0}>
+                  <VStack spacing={6} align="stretch">
+                    <Heading size="md">Server Settings</Heading>
+                    <Text color="gray.500" mb={4}>
+                      Configure your AI service connection and server settings
+                    </Text>
+
+                    {/* AI Service Configuration */}
+                    <Box>
+                      <Heading size="sm" color="blue.500" mb={4}>AI Service Configuration</Heading>
+                      <VStack spacing={4} align="stretch">
+                        <FormControl>
+                          <FormLabel fontSize="sm" fontWeight="600">AI Service Base URL</FormLabel>
+                          <Input
+                            value={tempBaseUrl}
+                            onChange={(e) => setTempBaseUrl(e.target.value)}
+                            placeholder="http://localhost:9068/v1"
+                          />
+                          <Text fontSize="xs" color="gray.500" mt={1}>
+                            Configure the base URL for your AI service endpoint
+                          </Text>
+                        </FormControl>
+                      </VStack>
+                    </Box>
+                  </VStack>
+                </TabPanel>
+
+                {/* Developer Tab */}
+                <TabPanel p={0}>
+                  <VStack spacing={6} align="stretch">
+                    <Heading size="md">Developer Settings</Heading>
+                    <Text color="gray.500">Developer tools and advanced options will be available here.</Text>
+                  </VStack>
+                </TabPanel>
+
+                {/* Integrations Tab */}
+                <TabPanel p={0}>
+                  <VStack spacing={6} align="stretch">
+                    <Heading size="md">Integrations</Heading>
+                    <Text color="gray.500">Third-party integrations and plugins will be available here.</Text>
+                  </VStack>
+                </TabPanel>
+              </TabPanels>
+            </Tabs>
           </ModalBody>
-          <ModalFooter>
+
+          <ModalFooter
+            borderTop="1px"
+            borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+          >
             <Button variant="ghost" mr={3} onClick={handleSettingsCancel}>
               Cancel
             </Button>
