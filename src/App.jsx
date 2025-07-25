@@ -98,6 +98,8 @@ function App() {
   const [activeChat, setActiveChat] = useState(1);
   const [baseUrl, setBaseUrl] = useState("http://localhost:9068/v1");
   const [tempBaseUrl, setTempBaseUrl] = useState("http://localhost:9068/v1");
+  const [useStreaming, setUseStreaming] = useState(true);
+  const [tempUseStreaming, setTempUseStreaming] = useState(true);
   const [activeSettingsTab, setActiveSettingsTab] = useState(0);
   const [colorTheme, setColorTheme] = useState("Auto");
   const [language, setLanguage] = useState("English");
@@ -135,16 +137,19 @@ function App() {
 
   const handleSettingsOpen = () => {
     setTempBaseUrl(baseUrl);
+    setTempUseStreaming(useStreaming);
     onSettingsOpen();
   };
 
   const handleSettingsSave = () => {
     setBaseUrl(tempBaseUrl);
+    setUseStreaming(tempUseStreaming);
     onSettingsClose();
   };
 
   const handleSettingsCancel = () => {
     setTempBaseUrl(baseUrl);
+    setTempUseStreaming(useStreaming);
     onSettingsClose();
   };
 
@@ -199,13 +204,71 @@ function App() {
         body: JSON.stringify({
           model: "gpt-3.5-turbo",
           messages: [...messages, userMessage],
+          stream: useStreaming,
         }),
       });
-      const data = await response.json();
-      const aiMessage = data.choices[0].message;
-      setMessages((msgs) => [...msgs, aiMessage]);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      if (useStreaming) {
+        // Handle streaming response
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        let streamingMessage = { role: "assistant", content: "" };
+
+        // Add the streaming message to the chat immediately
+        setMessages((msgs) => [...msgs, streamingMessage]);
+
+        if (reader) {
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value);
+              const lines = chunk.split('\n');
+
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6);
+                  if (data === '[DONE]') {
+                    break;
+                  }
+
+                  try {
+                    const parsed = JSON.parse(data);
+                    const content = parsed.choices?.[0]?.delta?.content;
+                    if (content) {
+                      streamingMessage.content += content;
+                      // Update the last message in real-time
+                      setMessages((msgs) => {
+                        const newMsgs = [...msgs];
+                        newMsgs[newMsgs.length - 1] = { ...streamingMessage };
+                        return newMsgs;
+                      });
+                    }
+                  } catch (e) {
+                    // Skip invalid JSON lines
+                    console.warn('Failed to parse SSE data:', data);
+                  }
+                }
+              }
+            }
+          } finally {
+            reader.releaseLock();
+          }
+        }
+      } else {
+        // Handle non-streaming response
+        const data = await response.json();
+        const aiMessage = data.choices[0].message;
+        setMessages((msgs) => [...msgs, aiMessage]);
+      }
     } catch (e) {
-      alert("请求失败");
+      console.error('Request failed:', e);
+      alert("请求失败: " + (e.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -683,6 +746,20 @@ function App() {
                           <Text fontSize="xs" color="gray.500" mt={1}>
                             Configure the base URL for your AI service endpoint
                           </Text>
+                        </FormControl>
+
+                        <FormControl>
+                          <Checkbox
+                            isChecked={tempUseStreaming}
+                            onChange={(e) => setTempUseStreaming(e.target.checked)}
+                          >
+                            <VStack align="start" spacing={1}>
+                              <Text fontSize="sm">Enable Streaming Response</Text>
+                              <Text fontSize="xs" color="gray.500">
+                                Stream responses in real-time for faster perceived response times
+                              </Text>
+                            </VStack>
+                          </Checkbox>
                         </FormControl>
                       </VStack>
                     </Box>
