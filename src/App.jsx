@@ -663,14 +663,7 @@ function App() {
 
           {/* 侧边栏底部 */}
           <Box p={4} borderTop="1px" borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}>
-            <HStack justify="space-between">
-              <IconButton
-                icon={<SettingsIcon />}
-                onClick={handleSettingsOpen}
-                variant="ghost"
-                size="sm"
-                aria-label="Settings"
-              />
+            <HStack justify="center">
               <IconButton
                 icon={colorMode === "dark" ? <SunIcon /> : <MoonIcon />}
                 onClick={toggleColorMode}
@@ -715,6 +708,13 @@ function App() {
                 >
                   System Prompt
                 </Button>
+                <IconButton
+                  icon={<SettingsIcon />}
+                  onClick={handleSettingsOpen}
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Settings"
+                />
               </HStack>
             </HStack>
           </Box>
