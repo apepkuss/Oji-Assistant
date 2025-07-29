@@ -6,6 +6,7 @@ import {
   FormControl, FormLabel, Tabs, TabList, TabPanels, Tab, TabPanel, Badge, Select, Checkbox
 } from "@chakra-ui/react";
 import { SunIcon, MoonIcon, AddIcon, ChatIcon, SettingsIcon, HamburgerIcon } from "@chakra-ui/icons";
+import { PenTool } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 function ChatBubble({ role, content }) {
@@ -106,9 +107,12 @@ function App() {
   const [showSideButtonLabels, setShowSideButtonLabels] = useState(false);
   const [modelGuardrails, setModelGuardrails] = useState("Strict");
   const [showPresetConfirmation, setShowPresetConfirmation] = useState(false);
+  const [systemPrompt, setSystemPrompt] = useState("You are a helpful AI assistant.");
+  const [tempSystemPrompt, setTempSystemPrompt] = useState("You are a helpful AI assistant.");
   const { colorMode, toggleColorMode } = useColorMode();
   const { isOpen: isSidebarOpen, onToggle: toggleSidebar } = useDisclosure();
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
+  const { isOpen: isSystemPromptOpen, onOpen: onSystemPromptOpen, onClose: onSystemPromptClose } = useDisclosure();
   const chatRef = useRef(null);
 
   const createNewChat = () => {
@@ -151,6 +155,21 @@ function App() {
     setTempBaseUrl(baseUrl);
     setTempUseStreaming(useStreaming);
     onSettingsClose();
+  };
+
+  const handleSystemPromptOpen = () => {
+    setTempSystemPrompt(systemPrompt);
+    onSystemPromptOpen();
+  };
+
+  const handleSystemPromptSave = () => {
+    setSystemPrompt(tempSystemPrompt);
+    onSystemPromptClose();
+  };
+
+  const handleSystemPromptCancel = () => {
+    setTempSystemPrompt(systemPrompt);
+    onSystemPromptClose();
   };
 
   const WelcomeScreen = () => (
@@ -198,12 +217,19 @@ function App() {
     setLoading(true);
 
     try {
+      // Prepare messages array with system prompt
+      const messagesToSend = [];
+      if (systemPrompt.trim()) {
+        messagesToSend.push({ role: "system", content: systemPrompt });
+      }
+      messagesToSend.push(...messages, userMessage);
+
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "gpt-3.5-turbo",
-          messages: [...messages, userMessage],
+          messages: messagesToSend,
           stream: useStreaming,
         }),
       });
@@ -381,6 +407,29 @@ function App() {
 
         {/* 主聊天区域 */}
         <Flex flex="1" direction="column">
+          {/* 桌面端顶部工具栏 */}
+          <Box
+            display={{ base: "none", md: "block" }}
+            px={6}
+            py={3}
+            borderBottom="1px"
+            borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+            bg={colorMode === "dark" ? "gray.900" : "white"}
+          >
+            <HStack justify="space-between" align="center">
+              <Heading size="md">Oji</Heading>
+              <HStack spacing={3}>
+                <Button
+                  onClick={handleSystemPromptOpen}
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<PenTool size={16} />}
+                >
+                  System Prompt
+                </Button>
+              </HStack>
+            </HStack>
+          </Box>
           {/* 移动端顶部栏 */}
           <Box
             display={{ base: "block", md: "none" }}
@@ -399,13 +448,24 @@ function App() {
                 aria-label="Toggle menu"
               />
               <Heading size="sm">Oji</Heading>
-              <IconButton
-                icon={colorMode === "dark" ? <SunIcon /> : <MoonIcon />}
-                onClick={toggleColorMode}
-                variant="ghost"
-                size="sm"
-                aria-label="Toggle theme"
-              />
+              <HStack spacing={2}>
+                <Button
+                  onClick={handleSystemPromptOpen}
+                  variant="ghost"
+                  size="sm"
+                  fontSize="xs"
+                  px={2}
+                >
+                  System Prompt
+                </Button>
+                <IconButton
+                  icon={colorMode === "dark" ? <SunIcon /> : <MoonIcon />}
+                  onClick={toggleColorMode}
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Toggle theme"
+                />
+              </HStack>
             </HStack>
           </Box>
 
@@ -793,6 +853,69 @@ function App() {
               Cancel
             </Button>
             <Button colorScheme="blue" onClick={handleSettingsSave}>
+              Save
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* System Prompt Modal */}
+      <Modal
+        isOpen={isSystemPromptOpen}
+        onClose={handleSystemPromptCancel}
+        size="xl"
+        scrollBehavior="inside"
+      >
+        <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+        <ModalContent
+          maxH="80vh"
+          bg={colorMode === "dark" ? "gray.800" : "white"}
+          borderRadius="xl"
+          mx={4}
+        >
+          <ModalHeader
+            borderBottom="1px"
+            borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+          >
+            <HStack>
+              <PenTool size={20} />
+              <Text>System Prompt</Text>
+            </HStack>
+          </ModalHeader>
+
+          <ModalBody p={6}>
+            <VStack spacing={4} align="stretch">
+              <Text fontSize="sm" color="gray.500">
+                Define the system behavior and personality. This message will be sent before every conversation.
+              </Text>
+
+              <FormControl>
+                <FormLabel fontSize="sm" fontWeight="600">
+                  System Prompt
+                </FormLabel>
+                <Textarea
+                  value={tempSystemPrompt}
+                  onChange={(e) => setTempSystemPrompt(e.target.value)}
+                  placeholder="You are a helpful AI assistant..."
+                  rows={12}
+                  resize="vertical"
+                  fontSize="sm"
+                />
+                <Text fontSize="xs" color="gray.500" mt={1}>
+                  This prompt will be included at the beginning of every conversation with the AI.
+                </Text>
+              </FormControl>
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter
+            borderTop="1px"
+            borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+          >
+            <Button variant="ghost" mr={3} onClick={handleSystemPromptCancel}>
+              Cancel
+            </Button>
+            <Button colorScheme="blue" onClick={handleSystemPromptSave}>
               Save
             </Button>
           </ModalFooter>
