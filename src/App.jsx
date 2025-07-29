@@ -9,6 +9,7 @@ import {
 import { SunIcon, MoonIcon, AddIcon, ChatIcon, SettingsIcon, HamburgerIcon, EditIcon, DeleteIcon } from "@chakra-ui/icons";
 import { PenTool, ImagePlus, Paperclip, MoreHorizontal, PanelLeft, PanelLeftClose } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import packageInfo from "../package.json";
 
 function ChatBubble({ role, content, images = [] }) {
   const isUser = role === "user";
@@ -128,7 +129,6 @@ function App() {
   const [activeSettingsTab, setActiveSettingsTab] = useState(0);
   const [colorTheme, setColorTheme] = useState("Auto");
   const [language, setLanguage] = useState("English");
-  const [showSideButtonLabels, setShowSideButtonLabels] = useState(false);
   const [systemPrompt, setSystemPrompt] = useState("You are a helpful AI assistant.");
   const [tempSystemPrompt, setTempSystemPrompt] = useState("You are a helpful AI assistant.");
   const [selectedImages, setSelectedImages] = useState([]);
@@ -1012,14 +1012,7 @@ function App() {
                         p={4}
                         borderRadius="md"
                       >
-                        <Text mb={2}>You are all up to date! The current version is 0.3.20</Text>
-                        <HStack>
-                          <Text fontSize="sm" color="gray.500">Updates Channel</Text>
-                          <Select size="sm" w="120px" value="Stable">
-                            <option value="Stable">Stable</option>
-                            <option value="Beta">Beta</option>
-                          </Select>
-                        </HStack>
+                        <Text mb={2}>You are all up to date! The current version is {packageInfo.version}.</Text>
                       </Box>
                     </Box>
 
@@ -1033,7 +1026,6 @@ function App() {
                         <Select value={language} onChange={(e) => setLanguage(e.target.value)}>
                           <option value="English">English</option>
                           <option value="Chinese">中文</option>
-                          <option value="Japanese">日本語</option>
                         </Select>
                       </FormControl>
                       <Text fontSize="xs" color="blue.400" mt={2}>
@@ -1048,7 +1040,7 @@ function App() {
                         <FormControl>
                           <FormLabel fontSize="sm" fontWeight="600">Color Theme</FormLabel>
                           <HStack spacing={2}>
-                            {["Auto", "Classic", "Light", "Sepia", "Dark", "Solarized Dark"].map((theme) => (
+                            {["Auto", "Classic", "Light"].map((theme) => (
                               <Button
                                 key={theme}
                                 size="sm"
@@ -1060,15 +1052,6 @@ function App() {
                               </Button>
                             ))}
                           </HStack>
-                        </FormControl>
-
-                        <FormControl>
-                          <Checkbox
-                            isChecked={showSideButtonLabels}
-                            onChange={(e) => setShowSideButtonLabels(e.target.checked)}
-                          >
-                            <Text fontSize="sm">Show side button labels</Text>
-                          </Checkbox>
                         </FormControl>
                       </VStack>
                     </Box>
