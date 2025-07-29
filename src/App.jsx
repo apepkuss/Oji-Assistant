@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   ChakraProvider, Box, Flex, Input, Button, Text, VStack, HStack, Heading, useColorMode, IconButton,
-  Avatar, Divider, InputGroup, InputRightElement, Textarea, useDisclosure,
+  Avatar, Divider, InputGroup, InputRightElement, InputLeftElement, Textarea, useDisclosure, Tooltip,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton,
   FormControl, FormLabel, Tabs, TabList, TabPanels, Tab, TabPanel, Badge, Select, Checkbox,
   Menu, MenuButton, MenuList, MenuItem, MenuDivider, extendTheme, ColorModeScript
@@ -945,6 +945,43 @@ function AppContent() {
               )}
 
               <InputGroup>
+                {/* 隐藏的文件输入 */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                  multiple
+                  style={{ display: "none" }}
+                />
+
+                {/* 左侧图片上传按钮 */}
+                <InputLeftElement
+                  height="50px"
+                  width="50px"
+                  top={0}
+                  left="4px"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Tooltip
+                    label="Upload images (supports multiple files)"
+                    aria-label="Upload images tooltip"
+                    placement="top"
+                    hasArrow
+                  >
+                    <IconButton
+                      icon={<ImagePlus size={16} />}
+                      onClick={() => fileInputRef.current?.click()}
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Upload image"
+                      isDisabled={loading}
+                    />
+                  </Tooltip>
+                </InputLeftElement>
+
                 <Textarea
                   ref={inputRef}
                   value={input}
@@ -959,7 +996,8 @@ function AppContent() {
                   isDisabled={loading}
                   resize="none"
                   minH="50px"
-                  pr="140px"
+                  pl="60px"
+                  pr="80px"
                   bg={colorMode === "dark" ? "gray.700" : "white"}
                   border="1px solid"
                   borderColor={colorMode === "dark" ? "gray.600" : "gray.300"}
@@ -968,45 +1006,29 @@ function AppContent() {
                     boxShadow: "0 0 0 1px blue.500"
                   }}
                 />
+
+                {/* 右侧发送按钮 */}
                 <InputRightElement
                   height="50px"
-                  width="140px"
+                  width="80px"
                   top={0}
                   right="4px"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <HStack spacing={1}>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleImageUpload}
-                      accept="image/*"
-                      multiple
-                      style={{ display: "none" }}
-                    />
-                    <IconButton
-                      icon={<ImagePlus size={16} />}
-                      onClick={() => fileInputRef.current?.click()}
-                      variant="ghost"
-                      size="sm"
-                      aria-label="Upload image"
-                      isDisabled={loading}
-                    />
-                    <Button
-                      onClick={sendMessage}
-                      isLoading={loading}
-                      colorScheme="blue"
-                      size="sm"
-                      px={4}
-                      minW="70px"
-                      height="40px"
-                      isDisabled={!input.trim() && selectedImages.length === 0}
-                    >
-                      Send
-                    </Button>
-                  </HStack>
+                  <Button
+                    onClick={sendMessage}
+                    isLoading={loading}
+                    colorScheme="blue"
+                    size="sm"
+                    px={4}
+                    minW="70px"
+                    height="40px"
+                    isDisabled={!input.trim() && selectedImages.length === 0}
+                  >
+                    Send
+                  </Button>
                 </InputRightElement>
               </InputGroup>
               <Text
