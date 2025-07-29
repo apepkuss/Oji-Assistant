@@ -808,21 +808,35 @@ function AppContent() {
                 </Button>
               </HStack>
               <HStack spacing={3}>
-                <Button
-                  onClick={handleSystemPromptOpen}
-                  variant="ghost"
-                  size="sm"
-                  leftIcon={<PenTool size={16} />}
+                <Tooltip
+                  label="Configure system prompt"
+                  aria-label="System prompt tooltip"
+                  placement="bottom"
+                  hasArrow
                 >
-                  System Prompt
-                </Button>
-                <IconButton
-                  icon={<SettingsIcon />}
-                  onClick={handleSettingsOpen}
-                  variant="ghost"
-                  size="sm"
-                  aria-label="Settings"
-                />
+                  <Button
+                    onClick={handleSystemPromptOpen}
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={<PenTool size={16} />}
+                  >
+                    System Prompt
+                  </Button>
+                </Tooltip>
+                <Tooltip
+                  label="Open app settings"
+                  aria-label="Settings tooltip"
+                  placement="bottom"
+                  hasArrow
+                >
+                  <IconButton
+                    icon={<SettingsIcon />}
+                    onClick={handleSettingsOpen}
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Settings"
+                  />
+                </Tooltip>
               </HStack>
             </HStack>
           </Box>
@@ -845,15 +859,22 @@ function AppContent() {
               />
               <Box flex="1" /> {/* 空白占位符 */}
               <HStack spacing={2}>
-                <Button
-                  onClick={handleSystemPromptOpen}
-                  variant="ghost"
-                  size="sm"
-                  fontSize="xs"
-                  px={2}
+                <Tooltip
+                  label="Configure system prompt"
+                  aria-label="System prompt tooltip"
+                  placement="bottom"
+                  hasArrow
                 >
-                  System Prompt
-                </Button>
+                  <Button
+                    onClick={handleSystemPromptOpen}
+                    variant="ghost"
+                    size="sm"
+                    fontSize="xs"
+                    px={2}
+                  >
+                    System Prompt
+                  </Button>
+                </Tooltip>
               </HStack>
             </HStack>
           </Box>
