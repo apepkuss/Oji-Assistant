@@ -6,7 +6,7 @@ import {
   FormControl, FormLabel, Tabs, TabList, TabPanels, Tab, TabPanel, Badge, Select, Checkbox,
   Menu, MenuButton, MenuList, MenuItem, MenuDivider, extendTheme, ColorModeScript
 } from "@chakra-ui/react";
-import { SunIcon, MoonIcon, AddIcon, ChatIcon, SettingsIcon, HamburgerIcon, EditIcon, DeleteIcon } from "@chakra-ui/icons";
+import { SunIcon, MoonIcon, AddIcon, ChatIcon, SettingsIcon, HamburgerIcon, EditIcon, DeleteIcon, ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { PenTool, ImagePlus, Paperclip, MoreHorizontal, PanelLeft, PanelLeftClose } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import packageInfo from "../package.json";
@@ -153,6 +153,9 @@ function AppContent() {
   const [activeChat, setActiveChat] = useState(1);
   const [baseUrl, setBaseUrl] = useState("http://localhost:9068/v1");
   const [tempBaseUrl, setTempBaseUrl] = useState("http://localhost:9068/v1");
+  const [apiKey, setApiKey] = useState("");
+  const [tempApiKey, setTempApiKey] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
   const [useStreaming, setUseStreaming] = useState(true);
   const [tempUseStreaming, setTempUseStreaming] = useState(true);
   const [activeSettingsTab, setActiveSettingsTab] = useState(0);
@@ -305,20 +308,61 @@ function AppContent() {
 
   const handleSettingsOpen = () => {
     setTempBaseUrl(baseUrl);
+    setTempApiKey(apiKey);
     setTempUseStreaming(useStreaming);
     onSettingsOpen();
   };
 
   const handleSettingsSave = () => {
     setBaseUrl(tempBaseUrl);
+    setApiKey(tempApiKey);
     setUseStreaming(tempUseStreaming);
     onSettingsClose();
   };
 
   const handleSettingsCancel = () => {
     setTempBaseUrl(baseUrl);
+    setTempApiKey(apiKey);
     setTempUseStreaming(useStreaming);
     onSettingsClose();
+  };
+
+  // 处理Modal内的键盘事件，确保粘贴功能正常工作
+  const handleModalKeyDown = (e) => {
+    // 允许Cmd+V (macOS) 和 Ctrl+V (Windows/Linux) 粘贴
+    if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
+      e.stopPropagation();
+      // 让浏览器处理默认的粘贴行为
+      return true;
+    }
+  };
+
+  // 处理Base URL的粘贴
+  const handleBaseUrlPaste = async (e) => {
+    e.preventDefault();
+    try {
+      const clipboardData = e.clipboardData || window.clipboardData;
+      const pastedData = clipboardData.getData('text');
+      setTempBaseUrl(pastedData);
+    } catch (err) {
+      console.log('Paste fallback');
+      // 如果上面的方法失败，让浏览器处理默认粘贴
+      return true;
+    }
+  };
+
+  // 处理API Key的粘贴
+  const handleApiKeyPaste = async (e) => {
+    e.preventDefault();
+    try {
+      const clipboardData = e.clipboardData || window.clipboardData;
+      const pastedData = clipboardData.getData('text');
+      setTempApiKey(pastedData);
+    } catch (err) {
+      console.log('Paste fallback');
+      // 如果上面的方法失败，让浏览器处理默认粘贴
+      return true;
+    }
   };
 
   const handleSystemPromptOpen = () => {
@@ -499,9 +543,15 @@ function AppContent() {
       }
       messagesToSend.push(currentMessage);
 
+      // 准备请求头
+      const headers = { "Content-Type": "application/json" };
+      if (apiKey && apiKey.trim()) {
+        headers["Authorization"] = `Bearer ${apiKey.trim()}`;
+      }
+
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: headers,
         body: JSON.stringify({
           model: "Unknown", // 这里可以替换为实际的模型名称
           messages: messagesToSend,
@@ -956,9 +1006,19 @@ function AppContent() {
         </Flex>
 
         {/* Settings Modal */}
-        <Modal isOpen={isSettingsOpen} onClose={handleSettingsCancel} size="6xl">
+        <Modal
+          isOpen={isSettingsOpen}
+          onClose={handleSettingsCancel}
+          size="6xl"
+          closeOnEsc={true}
+          blockScrollOnMount={false}
+        >
         <ModalOverlay />
-        <ModalContent maxW="800px" maxH="80vh">
+        <ModalContent
+          maxW="800px"
+          maxH="80vh"
+          onKeyDown={handleModalKeyDown}
+        >
           <ModalHeader
             borderBottom="1px"
             borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
@@ -1141,9 +1201,58 @@ function AppContent() {
                             value={tempBaseUrl}
                             onChange={(e) => setTempBaseUrl(e.target.value)}
                             placeholder="http://localhost:9068/v1"
+                            autoComplete="off"
+                            spellCheck="false"
+                            onPaste={handleBaseUrlPaste}
+                            onKeyDown={(e) => {
+                              // 明确允许Cmd+V (macOS) 和 Ctrl+V (Windows/Linux)
+                              if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
+                                e.stopPropagation();
+                                return true;
+                              }
+                            }}
                           />
                           <Text fontSize="xs" color="gray.500" mt={1}>
                             Configure the base URL for your AI service endpoint
+                          </Text>
+                        </FormControl>
+
+                        <FormControl>
+                          <FormLabel fontSize="sm" fontWeight="600">
+                            API Key
+                            <Text as="span" fontSize="xs" color="gray.500" fontWeight="normal" ml={1}>
+                              (Optional)
+                            </Text>
+                          </FormLabel>
+                          <InputGroup>
+                            <Input
+                              type={showApiKey ? "text" : "password"}
+                              value={tempApiKey}
+                              onChange={(e) => setTempApiKey(e.target.value)}
+                              placeholder="Enter your API key (optional)"
+                              autoComplete="off"
+                              spellCheck="false"
+                              onPaste={handleApiKeyPaste}
+                              onKeyDown={(e) => {
+                                // 明确允许Cmd+V (macOS) 和 Ctrl+V (Windows/Linux)
+                                if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
+                                  e.stopPropagation();
+                                  return true;
+                                }
+                              }}
+                            />
+                            <InputRightElement>
+                              <IconButton
+                                variant="ghost"
+                                size="sm"
+                                aria-label={showApiKey ? "Hide API key" : "Show API key"}
+                                icon={showApiKey ? <ViewOffIcon /> : <ViewIcon />}
+                                onClick={() => setShowApiKey(!showApiKey)}
+                              />
+                            </InputRightElement>
+                          </InputGroup>
+                          <Text fontSize="xs" color="gray.500" mt={1}>
+                            API key for authenticated access to your AI service (will be sent in Authorization header)
                           </Text>
                         </FormControl>
 
