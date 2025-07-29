@@ -660,19 +660,6 @@ function App() {
               </Box>
             ))}
           </Box>
-
-          {/* 侧边栏底部 */}
-          <Box p={4} borderTop="1px" borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}>
-            <HStack justify="center">
-              <IconButton
-                icon={colorMode === "dark" ? <SunIcon /> : <MoonIcon />}
-                onClick={toggleColorMode}
-                variant="ghost"
-                size="sm"
-                aria-label="Toggle theme"
-              />
-            </HStack>
-          </Box>
         </Box>
 
         {/* 主聊天区域 */}
@@ -746,13 +733,6 @@ function App() {
                 >
                   System Prompt
                 </Button>
-                <IconButton
-                  icon={colorMode === "dark" ? <SunIcon /> : <MoonIcon />}
-                  onClick={toggleColorMode}
-                  variant="ghost"
-                  size="sm"
-                  aria-label="Toggle theme"
-                />
               </HStack>
             </HStack>
           </Box>
