@@ -7,7 +7,7 @@ import {
   Menu, MenuButton, MenuList, MenuItem, MenuDivider
 } from "@chakra-ui/react";
 import { SunIcon, MoonIcon, AddIcon, ChatIcon, SettingsIcon, HamburgerIcon, EditIcon, DeleteIcon } from "@chakra-ui/icons";
-import { PenTool, ImagePlus, Paperclip, MoreHorizontal } from "lucide-react";
+import { PenTool, ImagePlus, Paperclip, MoreHorizontal, PanelLeft, PanelLeftClose } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 function ChatBubble({ role, content, images = [] }) {
@@ -129,14 +129,13 @@ function App() {
   const [colorTheme, setColorTheme] = useState("Auto");
   const [language, setLanguage] = useState("English");
   const [showSideButtonLabels, setShowSideButtonLabels] = useState(false);
-  const [modelGuardrails, setModelGuardrails] = useState("Strict");
-  const [showPresetConfirmation, setShowPresetConfirmation] = useState(false);
   const [systemPrompt, setSystemPrompt] = useState("You are a helpful AI assistant.");
   const [tempSystemPrompt, setTempSystemPrompt] = useState("You are a helpful AI assistant.");
   const [selectedImages, setSelectedImages] = useState([]);
   const [renamingChat, setRenamingChat] = useState(null);
   const [renameValue, setRenameValue] = useState("");
   const [deletingChat, setDeletingChat] = useState(null);
+  const [showChats, setShowChats] = useState(true);
   const { colorMode, toggleColorMode } = useColorMode();
   const { isOpen: isSidebarOpen, onToggle: toggleSidebar } = useDisclosure();
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
@@ -379,6 +378,21 @@ function App() {
     chatRef.current?.scrollTo(0, chatRef.current.scrollHeight);
   }, [messages, loading]);
 
+  // 键盘快捷键：Cmd/Ctrl + B 切换聊天列表显示
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
+        event.preventDefault();
+        setShowChats(prev => !prev);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   const sendMessage = async () => {
     if (!input.trim() && selectedImages.length === 0) return;
 
@@ -530,8 +544,15 @@ function App() {
 
         {/* 左侧侧边栏 */}
         <Box
-          w={{ base: isSidebarOpen ? "min(280px, 80vw)" : "0", md: "min(280px, 25vw)", lg: "280px" }}
-          display={{ base: isSidebarOpen ? "flex" : "none", md: "flex" }}
+          w={{
+            base: isSidebarOpen ? "min(280px, 80vw)" : "0",
+            md: showChats ? "min(280px, 25vw)" : "0",
+            lg: showChats ? "280px" : "0"
+          }}
+          display={{
+            base: isSidebarOpen ? "flex" : "none",
+            md: showChats ? "flex" : "none"
+          }}
           bg={colorMode === "dark" ? "gray.900" : "white"}
           borderRight="1px"
           borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
@@ -540,6 +561,7 @@ function App() {
           zIndex={{ base: 10, md: "auto" }}
           height="100vh"
           transition="all 0.3s"
+          overflow="hidden"
         >
           {/* 侧边栏头部 */}
           <Box p={4}>
@@ -671,7 +693,19 @@ function App() {
             borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
             bg={colorMode === "dark" ? "gray.900" : "white"}
           >
-            <HStack justify="flex-end" align="center">
+            <HStack justify="space-between" align="center">
+              <HStack spacing={3}>
+                <Button
+                  onClick={() => setShowChats(!showChats)}
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={showChats ? <PanelLeftClose size={16} /> : <PanelLeft size={16} />}
+                  aria-label={showChats ? "Hide chats" : "Show chats"}
+                  title={`${showChats ? "Hide" : "Show"} chats (⌘/Ctrl+B)`}
+                >
+                  {showChats ? "Hide Chats" : "Show Chats"}
+                </Button>
+              </HStack>
               <HStack spacing={3}>
                 <Button
                   onClick={handleSystemPromptOpen}
@@ -1054,36 +1088,6 @@ function App() {
                             onChange={(e) => setShowSideButtonLabels(e.target.checked)}
                           >
                             <Text fontSize="sm">Show side button labels</Text>
-                          </Checkbox>
-                        </FormControl>
-
-                        <FormControl>
-                          <FormLabel fontSize="sm" fontWeight="600">
-                            Model loading guardrails
-                            <Text as="span" fontSize="xs" color="gray.500" ml={1}>ⓘ</Text>
-                          </FormLabel>
-                          <Select
-                            value={modelGuardrails}
-                            onChange={(e) => setModelGuardrails(e.target.value)}
-                          >
-                            <option value="None">None</option>
-                            <option value="Moderate">Moderate</option>
-                            <option value="Strict">Strict</option>
-                          </Select>
-                          <Text fontSize="xs" color="gray.500" mt={1}>
-                            Strong precautions against system overload
-                          </Text>
-                        </FormControl>
-
-                        <FormControl>
-                          <Checkbox
-                            isChecked={showPresetConfirmation}
-                            onChange={(e) => setShowPresetConfirmation(e.target.checked)}
-                          >
-                            <Text fontSize="sm">
-                              Presets: Show confirmation dialog when committing new fields to the preset
-                              <Text as="span" fontSize="xs" color="gray.500" ml={1}>ⓘ</Text>
-                            </Text>
                           </Checkbox>
                         </FormControl>
                       </VStack>
