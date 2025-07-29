@@ -62,7 +62,7 @@ function ChatBubble({ role, content, images = [] }) {
         px={4}
         py={3}
         borderRadius="xl"
-        maxW="75%"
+        maxW={{ base: "85%", md: "600px", lg: "650px" }}
         minW="fit-content"
         width="fit-content"
         boxShadow={isUser ? "md" : "none"}
@@ -805,19 +805,21 @@ function AppContent() {
             {messages.length === 0 ? (
               <WelcomeScreen />
             ) : (
-              <VStack align="stretch" spacing={1} w="100%">
-                {messages.map((msg, idx) => (
-                  <ChatBubble key={idx} role={msg.role} content={msg.content} images={msg.images} />
-                ))}
-                {loading && (
-                  <Flex align="center" mb={4}>
-                    <Avatar size="sm" name="Oji" bg="purple.500" color="white" mr={3} />
-                    <Text color={colorMode === "dark" ? "gray.400" : "gray.600"}>
-                      Oji is thinking...
-                    </Text>
-                  </Flex>
-                )}
-              </VStack>
+              <Box maxW="900px" mx="auto" w="100%">
+                <VStack align="stretch" spacing={1} w="100%">
+                  {messages.map((msg, idx) => (
+                    <ChatBubble key={idx} role={msg.role} content={msg.content} images={msg.images} />
+                  ))}
+                  {loading && (
+                    <Flex align="center" mb={4}>
+                      <Avatar size="sm" name="Oji" bg="purple.500" color="white" mr={3} />
+                      <Text color={colorMode === "dark" ? "gray.400" : "gray.600"}>
+                        Oji is thinking...
+                      </Text>
+                    </Flex>
+                  )}
+                </VStack>
+              </Box>
             )}
           </Box>
 
@@ -834,7 +836,7 @@ function AppContent() {
             bg={colorMode === "dark" ? "gray.800" : "gray.50"}
             zIndex={1}
           >
-            <Box maxW="600px" mx="auto" w="100%">
+            <Box maxW="900px" mx="auto" w="100%">
               {/* 图片预览区域 */}
               {selectedImages.length > 0 && (
                 <Box mb={3}>
