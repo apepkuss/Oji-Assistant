@@ -3,13 +3,14 @@ import {
   ChakraProvider, Box, Flex, Input, Button, Text, VStack, HStack, Heading, useColorMode, IconButton,
   Avatar, Divider, InputGroup, InputRightElement, Textarea, useDisclosure,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton,
-  FormControl, FormLabel, Tabs, TabList, TabPanels, Tab, TabPanel, Badge, Select, Checkbox
+  FormControl, FormLabel, Tabs, TabList, TabPanels, Tab, TabPanel, Badge, Select, Checkbox,
+  Menu, MenuButton, MenuList, MenuItem, MenuDivider
 } from "@chakra-ui/react";
-import { SunIcon, MoonIcon, AddIcon, ChatIcon, SettingsIcon, HamburgerIcon } from "@chakra-ui/icons";
-import { PenTool } from "lucide-react";
+import { SunIcon, MoonIcon, AddIcon, ChatIcon, SettingsIcon, HamburgerIcon, EditIcon, DeleteIcon } from "@chakra-ui/icons";
+import { PenTool, ImagePlus, Paperclip, MoreHorizontal } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
-function ChatBubble({ role, content }) {
+function ChatBubble({ role, content, images = [] }) {
   const isUser = role === "user";
   const { colorMode } = useColorMode();
 
@@ -38,42 +39,65 @@ function ChatBubble({ role, content }) {
         border={!isUser && colorMode === "light" ? "1px solid" : "none"}
         borderColor={!isUser && colorMode === "light" ? "gray.200" : "transparent"}
       >
-        <Box lineHeight="1.5" sx={{
-          '& p': { margin: 0, marginBottom: 2 },
-          '& p:last-child': { marginBottom: 0 },
-          '& h1, & h2, & h3, & h4, & h5, & h6': {
-            marginTop: 2,
-            marginBottom: 1,
-            fontWeight: 'bold'
-          },
-          '& ul, & ol': {
-            marginLeft: 4,
-            marginBottom: 2
-          },
-          '& li': { marginBottom: 1 },
-          '& pre': {
-            backgroundColor: colorMode === "dark" ? "gray.800" : "gray.50",
-            padding: 2,
-            borderRadius: "md",
-            marginBottom: 2,
-            overflow: "auto"
-          },
-          '& code': {
-            backgroundColor: colorMode === "dark" ? "gray.800" : "gray.50",
-            padding: "2px 4px",
-            borderRadius: "sm",
-            fontSize: "0.9em"
-          },
-          '& blockquote': {
-            borderLeft: "4px solid",
-            borderColor: colorMode === "dark" ? "gray.600" : "gray.300",
-            paddingLeft: 3,
-            marginLeft: 2,
-            marginBottom: 2
-          }
-        }}>
-          <ReactMarkdown>{content}</ReactMarkdown>
-        </Box>
+        {/* 图片显示区域 */}
+        {images && images.length > 0 && (
+          <VStack spacing={2} align="stretch" mb={content ? 3 : 0}>
+            {images.map((image, index) => (
+              <Box key={index} borderRadius="md" overflow="hidden">
+                <img
+                  src={image.url || image}
+                  alt={image.name || `Image ${index + 1}`}
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "300px",
+                    objectFit: "contain",
+                    borderRadius: "8px"
+                  }}
+                />
+              </Box>
+            ))}
+          </VStack>
+        )}
+
+        {/* 文本内容区域 */}
+        {content && (
+          <Box lineHeight="1.5" sx={{
+            '& p': { margin: 0, marginBottom: 2 },
+            '& p:last-child': { marginBottom: 0 },
+            '& h1, & h2, & h3, & h4, & h5, & h6': {
+              marginTop: 2,
+              marginBottom: 1,
+              fontWeight: 'bold'
+            },
+            '& ul, & ol': {
+              marginLeft: 4,
+              marginBottom: 2
+            },
+            '& li': { marginBottom: 1 },
+            '& pre': {
+              backgroundColor: colorMode === "dark" ? "gray.800" : "gray.50",
+              padding: 2,
+              borderRadius: "md",
+              marginBottom: 2,
+              overflow: "auto"
+            },
+            '& code': {
+              backgroundColor: colorMode === "dark" ? "gray.800" : "gray.50",
+              padding: "2px 4px",
+              borderRadius: "sm",
+              fontSize: "0.9em"
+            },
+            '& blockquote': {
+              borderLeft: "4px solid",
+              borderColor: colorMode === "dark" ? "gray.600" : "gray.300",
+              paddingLeft: 3,
+              marginLeft: 2,
+              marginBottom: 2
+            }
+          }}>
+            <ReactMarkdown>{content}</ReactMarkdown>
+          </Box>
+        )}
       </Box>
       {isUser && (
         <Avatar
@@ -94,7 +118,7 @@ function App() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [chats, setChats] = useState([
-    { id: 1, name: "New Chat" }
+    { id: 1, name: "New Chat", messages: [] }
   ]);
   const [activeChat, setActiveChat] = useState(1);
   const [baseUrl, setBaseUrl] = useState("http://localhost:9068/v1");
@@ -109,17 +133,54 @@ function App() {
   const [showPresetConfirmation, setShowPresetConfirmation] = useState(false);
   const [systemPrompt, setSystemPrompt] = useState("You are a helpful AI assistant.");
   const [tempSystemPrompt, setTempSystemPrompt] = useState("You are a helpful AI assistant.");
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [renamingChat, setRenamingChat] = useState(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deletingChat, setDeletingChat] = useState(null);
   const { colorMode, toggleColorMode } = useColorMode();
   const { isOpen: isSidebarOpen, onToggle: toggleSidebar } = useDisclosure();
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
   const { isOpen: isSystemPromptOpen, onOpen: onSystemPromptOpen, onClose: onSystemPromptClose } = useDisclosure();
+  const { isOpen: isRenameOpen, onOpen: onRenameOpen, onClose: onRenameClose } = useDisclosure();
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
   const chatRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const createNewChat = () => {
     const newId = chats.length + 1;
-    setChats([...chats, { id: newId, name: "New Chat" }]);
+    setChats([...chats, { id: newId, name: "New Chat", messages: [] }]);
     setActiveChat(newId);
-    setMessages([]);
+    setMessages([]); // 只为新聊天设置空消息
+  };
+
+  // 保存当前聊天的消息到chats状态中
+  const saveCurrentChatMessages = () => {
+    setChats(prevChats =>
+      prevChats.map(chat =>
+        chat.id === activeChat
+          ? { ...chat, messages: messages }
+          : chat
+      )
+    );
+  };
+
+  // 切换聊天
+  const switchToChat = (chatId) => {
+    if (chatId === activeChat) return; // 如果已经是当前聊天，不需要切换
+
+    // 保存当前聊天的消息
+    saveCurrentChatMessages();
+
+    // 切换到新聊天并加载消息
+    setChats(prevChats => {
+      const targetChat = prevChats.find(chat => chat.id === chatId);
+      if (targetChat) {
+        setMessages(targetChat.messages || []);
+      }
+      return prevChats;
+    });
+
+    setActiveChat(chatId);
   };
 
   const generateChatName = (message) => {
@@ -137,6 +198,81 @@ function App() {
         chat.id === chatId ? { ...chat, name: newName } : chat
       )
     );
+  };
+
+  const deleteChat = (chatId) => {
+    if (chats.length <= 1) {
+      // 不允许删除最后一个聊天
+      return;
+    }
+
+    // 先计算删除后剩余的聊天
+    const remainingChats = chats.filter(chat => chat.id !== chatId);
+
+    // 如果删除的是当前活跃的聊天，切换到第一个可用的聊天
+    if (activeChat === chatId && remainingChats.length > 0) {
+      setActiveChat(remainingChats[0].id);
+      setMessages(remainingChats[0].messages || []); // 加载新聊天的消息
+    }
+
+    // 删除聊天
+    setChats(remainingChats);
+  };
+
+  const duplicateChat = (chatId) => {
+    const chatToDuplicate = chats.find(chat => chat.id === chatId);
+    if (chatToDuplicate) {
+      const newId = Math.max(...chats.map(c => c.id)) + 1;
+      const newChat = {
+        id: newId,
+        name: `${chatToDuplicate.name} (Copy)`,
+        messages: [...(chatToDuplicate.messages || [])] // 复制消息
+      };
+      setChats(prevChats => [...prevChats, newChat]);
+    }
+  };
+
+  const renameChat = (chatId, newName) => {
+    updateChatName(chatId, newName);
+  };
+
+  const startRenaming = (chat) => {
+    setRenamingChat(chat);
+    setRenameValue(chat.name);
+    onRenameOpen();
+  };
+
+  const handleRenameSubmit = () => {
+    if (renamingChat && renameValue.trim()) {
+      updateChatName(renamingChat.id, renameValue.trim());
+      onRenameClose();
+      setRenamingChat(null);
+      setRenameValue("");
+    }
+  };
+
+  const handleRenameCancel = () => {
+    onRenameClose();
+    setRenamingChat(null);
+    setRenameValue("");
+  };
+
+  const startDeleting = (chat) => {
+    setDeletingChat(chat);
+    onDeleteOpen();
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deletingChat) {
+      deleteChat(deletingChat.id);
+      onDeleteClose();
+      setDeletingChat(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    onDeleteClose();
+    setDeletingChat(null);
   };
 
   const handleSettingsOpen = () => {
@@ -172,6 +308,35 @@ function App() {
     onSystemPromptClose();
   };
 
+  // 图片处理函数
+  const handleImageUpload = (event) => {
+    const files = Array.from(event.target.files);
+    files.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const imageData = {
+            id: Date.now() + Math.random(),
+            file: file,
+            url: e.target.result,
+            name: file.name,
+            size: file.size
+          };
+          setSelectedImages(prev => [...prev, imageData]);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  };
+
+  const removeImage = (imageId) => {
+    setSelectedImages(prev => prev.filter(img => img.id !== imageId));
+  };
+
+  const clearAllImages = () => {
+    setSelectedImages([]);
+  };
+
   const WelcomeScreen = () => (
     <Flex
       direction="column"
@@ -197,23 +362,42 @@ function App() {
     </Flex>
   );
 
+  // 同步消息到对应的聊天
+  useEffect(() => {
+    if (messages.length > 0) {
+      setChats(prevChats =>
+        prevChats.map(chat =>
+          chat.id === activeChat
+            ? { ...chat, messages: messages }
+            : chat
+        )
+      );
+    }
+  }, [messages, activeChat]);
+
   useEffect(() => {
     chatRef.current?.scrollTo(0, chatRef.current.scrollHeight);
   }, [messages, loading]);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
-    const userMessage = { role: "user", content: input };
+    if (!input.trim() && selectedImages.length === 0) return;
+
+    const userMessage = {
+      role: "user",
+      content: input,
+      images: selectedImages.length > 0 ? selectedImages : undefined
+    };
     const currentInput = input.trim();
 
     // 如果这是第一条消息，自动生成聊天名称
     if (messages.length === 0) {
-      const newChatName = generateChatName(currentInput);
+      const newChatName = generateChatName(currentInput || "Image");
       updateChatName(activeChat, newChatName);
     }
 
     setMessages([...messages, userMessage]);
     setInput("");
+    setSelectedImages([]); // 清空选中的图片
     setLoading(true);
 
     try {
@@ -222,13 +406,33 @@ function App() {
       if (systemPrompt.trim()) {
         messagesToSend.push({ role: "system", content: systemPrompt });
       }
-      messagesToSend.push(...messages, userMessage);
+
+      // 将之前的消息添加到发送队列
+      messagesToSend.push(...messages);
+
+      // 准备当前用户消息，如果有图片则转换为API格式
+      const currentMessage = { role: "user", content: input };
+      if (selectedImages.length > 0) {
+        // 对于支持多模态的API，添加图片内容
+        currentMessage.content = [
+          { type: "text", text: input || "Please analyze this image." },
+          ...selectedImages.map(img => {
+            // 提取Base64字符串部分（去掉data:image/jpeg;base64,前缀）
+            const base64Data = img.url.split(',')[1];
+            return {
+              type: "image_url",
+              image_url: { url: base64Data }
+            };
+          })
+        ];
+      }
+      messagesToSend.push(currentMessage);
 
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "gpt-3.5-turbo",
+          model: "Unknown", // 这里可以替换为实际的模型名称
           messages: messagesToSend,
           stream: useStreaming,
         }),
@@ -372,13 +576,64 @@ function App() {
                 borderLeft={activeChat === chat.id ? "3px solid" : "3px solid transparent"}
                 borderColor={activeChat === chat.id ? "blue.500" : "transparent"}
                 _hover={{ bg: colorMode === "dark" ? "gray.700" : "gray.100" }}
-                onClick={() => setActiveChat(chat.id)}
+                position="relative"
+                onClick={() => switchToChat(chat.id)}
+                role="group"
               >
-                <HStack>
-                  <ChatIcon size="sm" color={colorMode === "dark" ? "gray.400" : "gray.500"} />
-                  <Text fontSize="sm" fontWeight="medium" isTruncated flex="1">
-                    {chat.name}
-                  </Text>
+                <HStack justify="space-between" align="center">
+                  <HStack flex="1" minW="0">
+                    <ChatIcon size="sm" color={colorMode === "dark" ? "gray.400" : "gray.500"} />
+                    <Text fontSize="sm" fontWeight="medium" isTruncated flex="1">
+                      {chat.name}
+                    </Text>
+                  </HStack>
+
+                  <Menu>
+                    <MenuButton
+                      as={IconButton}
+                      icon={<MoreHorizontal size={16} />}
+                      variant="ghost"
+                      size="sm"
+                      opacity={0}
+                      _groupHover={{ opacity: 1 }}
+                      _hover={{ opacity: 1 }}
+                      _focus={{ opacity: 1 }}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label="Chat options"
+                    />
+                    <MenuList>
+                      <MenuItem
+                        icon={<EditIcon />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startRenaming(chat);
+                        }}
+                      >
+                        Rename
+                      </MenuItem>
+                      <MenuItem
+                        icon={<ChatIcon />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          duplicateChat(chat.id);
+                        }}
+                      >
+                        Duplicate
+                      </MenuItem>
+                      <MenuDivider />
+                      <MenuItem
+                        icon={<DeleteIcon />}
+                        color="red.500"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startDeleting(chat);
+                        }}
+                        isDisabled={chats.length <= 1}
+                      >
+                        Delete
+                      </MenuItem>
+                    </MenuList>
+                  </Menu>
                 </HStack>
               </Box>
             ))}
@@ -416,8 +671,7 @@ function App() {
             borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
             bg={colorMode === "dark" ? "gray.900" : "white"}
           >
-            <HStack justify="space-between" align="center">
-              <Heading size="md">Oji</Heading>
+            <HStack justify="flex-end" align="center">
               <HStack spacing={3}>
                 <Button
                   onClick={handleSystemPromptOpen}
@@ -447,7 +701,7 @@ function App() {
                 size="sm"
                 aria-label="Toggle menu"
               />
-              <Heading size="sm">Oji</Heading>
+              <Box flex="1" /> {/* 空白占位符 */}
               <HStack spacing={2}>
                 <Button
                   onClick={handleSystemPromptOpen}
@@ -483,7 +737,7 @@ function App() {
             ) : (
               <VStack align="stretch" spacing={1} w="100%">
                 {messages.map((msg, idx) => (
-                  <ChatBubble key={idx} role={msg.role} content={msg.content} />
+                  <ChatBubble key={idx} role={msg.role} content={msg.content} images={msg.images} />
                 ))}
                 {loading && (
                   <Flex align="center" mb={4}>
@@ -507,9 +761,52 @@ function App() {
             py={4}
             borderTop="1px"
             borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+            bg={colorMode === "dark" ? "gray.800" : "gray.50"}
             zIndex={1}
           >
             <Box maxW="600px" mx="auto" w="100%">
+              {/* 图片预览区域 */}
+              {selectedImages.length > 0 && (
+                <Box mb={3}>
+                  <HStack justify="space-between" align="center" mb={2}>
+                    <Text fontSize="sm" color="gray.500">
+                      Selected Images ({selectedImages.length})
+                    </Text>
+                    <Button size="xs" variant="ghost" onClick={clearAllImages}>
+                      Clear All
+                    </Button>
+                  </HStack>
+                  <HStack spacing={2} overflowX="auto" pb={2}>
+                    {selectedImages.map((image) => (
+                      <Box key={image.id} position="relative" flexShrink={0}>
+                        <img
+                          src={image.url}
+                          alt={image.name}
+                          style={{
+                            width: "60px",
+                            height: "60px",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                            border: "1px solid #ccc"
+                          }}
+                        />
+                        <IconButton
+                          icon={<Text fontSize="xs">×</Text>}
+                          position="absolute"
+                          top="-5px"
+                          right="-5px"
+                          size="xs"
+                          colorScheme="red"
+                          borderRadius="full"
+                          onClick={() => removeImage(image.id)}
+                          aria-label="Remove image"
+                        />
+                      </Box>
+                    ))}
+                  </HStack>
+                </Box>
+              )}
+
               <InputGroup>
                 <Textarea
                   value={input}
@@ -524,7 +821,7 @@ function App() {
                   isDisabled={loading}
                   resize="none"
                   minH="50px"
-                  pr="90px"
+                  pr="140px"
                   bg={colorMode === "dark" ? "gray.700" : "white"}
                   border="1px solid"
                   borderColor={colorMode === "dark" ? "gray.600" : "gray.300"}
@@ -535,25 +832,43 @@ function App() {
                 />
                 <InputRightElement
                   height="50px"
-                  width="90px"
+                  width="140px"
                   top={0}
                   right="4px"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <Button
-                    onClick={sendMessage}
-                    isLoading={loading}
-                    colorScheme="blue"
-                    size="sm"
-                    px={4}
-                    minW="70px"
-                    height="40px"
-                    isDisabled={!input.trim()}
-                  >
-                    Send
-                  </Button>
+                  <HStack spacing={1}>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageUpload}
+                      accept="image/*"
+                      multiple
+                      style={{ display: "none" }}
+                    />
+                    <IconButton
+                      icon={<ImagePlus size={16} />}
+                      onClick={() => fileInputRef.current?.click()}
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Upload image"
+                      isDisabled={loading}
+                    />
+                    <Button
+                      onClick={sendMessage}
+                      isLoading={loading}
+                      colorScheme="blue"
+                      size="sm"
+                      px={4}
+                      minW="70px"
+                      height="40px"
+                      isDisabled={!input.trim() && selectedImages.length === 0}
+                    >
+                      Send
+                    </Button>
+                  </HStack>
                 </InputRightElement>
               </InputGroup>
               <Text
@@ -917,6 +1232,130 @@ function App() {
             </Button>
             <Button colorScheme="blue" onClick={handleSystemPromptSave}>
               Save
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Rename Chat Modal */}
+      <Modal isOpen={isRenameOpen} onClose={handleRenameCancel} size="md">
+        <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+        <ModalContent
+          bg={colorMode === "dark" ? "gray.800" : "white"}
+          borderRadius="xl"
+          mx={4}
+        >
+          <ModalHeader
+            borderBottom="1px"
+            borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+          >
+            <HStack>
+              <EditIcon />
+              <Text>Rename Chat</Text>
+            </HStack>
+          </ModalHeader>
+
+          <ModalBody p={6}>
+            <VStack spacing={4} align="stretch">
+              <Text fontSize="sm" color="gray.500">
+                Enter a new name for this chat conversation.
+              </Text>
+
+              <FormControl>
+                <FormLabel fontSize="sm" fontWeight="600">
+                  Chat Name
+                </FormLabel>
+                <Input
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  placeholder="Enter chat name..."
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleRenameSubmit();
+                    } else if (e.key === "Escape") {
+                      handleRenameCancel();
+                    }
+                  }}
+                  autoFocus
+                />
+              </FormControl>
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter
+            borderTop="1px"
+            borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+          >
+            <Button variant="ghost" mr={3} onClick={handleRenameCancel}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="blue"
+              onClick={handleRenameSubmit}
+              isDisabled={!renameValue.trim()}
+            >
+              Save
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Delete Chat Confirmation Modal */}
+      <Modal isOpen={isDeleteOpen} onClose={handleDeleteCancel} size="md">
+        <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+        <ModalContent
+          bg={colorMode === "dark" ? "gray.800" : "white"}
+          borderRadius="xl"
+          mx={4}
+        >
+          <ModalHeader
+            borderBottom="1px"
+            borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+          >
+            <HStack>
+              <DeleteIcon color="red.500" />
+              <Text>Delete Chat</Text>
+            </HStack>
+          </ModalHeader>
+
+          <ModalBody p={6}>
+            <VStack spacing={4} align="stretch">
+              <Text fontSize="md" fontWeight="500">
+                Are you sure you want to delete this chat?
+              </Text>
+
+              {deletingChat && (
+                <Box
+                  bg={colorMode === "dark" ? "gray.700" : "gray.100"}
+                  p={3}
+                  borderRadius="md"
+                  borderLeft="4px solid"
+                  borderColor="red.500"
+                >
+                  <Text fontSize="sm" fontWeight="500" color="red.500">
+                    "{deletingChat.name}"
+                  </Text>
+                </Box>
+              )}
+
+              <Text fontSize="sm" color="gray.500">
+                This action cannot be undone. All messages in this conversation will be permanently lost.
+              </Text>
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter
+            borderTop="1px"
+            borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+          >
+            <Button variant="ghost" mr={3} onClick={handleDeleteCancel}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="red"
+              onClick={handleDeleteConfirm}
+            >
+              Delete
             </Button>
           </ModalFooter>
         </ModalContent>
