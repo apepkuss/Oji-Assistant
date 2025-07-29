@@ -176,6 +176,7 @@ function AppContent() {
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
   const chatRef = useRef(null);
   const fileInputRef = useRef(null);
+  const inputRef = useRef(null);
 
   const createNewChat = () => {
     const newId = chats.length + 1;
@@ -479,7 +480,7 @@ function AppContent() {
     }
   }, [colorTheme, setColorMode]);
 
-  // 键盘快捷键：Cmd/Ctrl + B 切换聊天列表显示
+  // 键盘快捷键：Cmd/Ctrl + B 切换聊天列表显示，并设置初始焦点
   useEffect(() => {
     const handleKeyDown = (event) => {
       if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
@@ -489,6 +490,14 @@ function AppContent() {
     };
 
     document.addEventListener('keydown', handleKeyDown);
+
+    // 页面加载后将焦点设置到输入框
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 500);
+
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
@@ -622,6 +631,12 @@ function AppContent() {
       alert("请求失败: " + (e.message || "Unknown error"));
     } finally {
       setLoading(false);
+      // 将焦点返回到输入框
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 100);
     }
   };
 
@@ -931,6 +946,7 @@ function AppContent() {
 
               <InputGroup>
                 <Textarea
+                  ref={inputRef}
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   placeholder="Ask anything..."
