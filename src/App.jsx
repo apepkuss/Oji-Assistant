@@ -4,12 +4,41 @@ import {
   Avatar, Divider, InputGroup, InputRightElement, Textarea, useDisclosure,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton,
   FormControl, FormLabel, Tabs, TabList, TabPanels, Tab, TabPanel, Badge, Select, Checkbox,
-  Menu, MenuButton, MenuList, MenuItem, MenuDivider
+  Menu, MenuButton, MenuList, MenuItem, MenuDivider, extendTheme, ColorModeScript
 } from "@chakra-ui/react";
 import { SunIcon, MoonIcon, AddIcon, ChatIcon, SettingsIcon, HamburgerIcon, EditIcon, DeleteIcon } from "@chakra-ui/icons";
 import { PenTool, ImagePlus, Paperclip, MoreHorizontal, PanelLeft, PanelLeftClose } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import packageInfo from "../package.json";
+
+// 主题配置
+const theme = extendTheme({
+  config: {
+    initialColorMode: 'light',
+    useSystemColorMode: false,
+  },
+  colors: {
+    classic: {
+      50: '#f7fafc',
+      100: '#edf2f7',
+      200: '#e2e8f0',
+      300: '#cbd5e0',
+      400: '#a0aec0',
+      500: '#718096',
+      600: '#4a5568',
+      700: '#2d3748',
+      800: '#1a202c',
+      900: '#171923',
+    },
+  },
+  styles: {
+    global: (props) => ({
+      body: {
+        bg: props.colorMode === 'dark' ? 'gray.800' : 'gray.50',
+      },
+    }),
+  },
+});
 
 function ChatBubble({ role, content, images = [] }) {
   const isUser = role === "user";
@@ -114,7 +143,7 @@ function ChatBubble({ role, content, images = [] }) {
   );
 }
 
-function App() {
+function AppContent() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -136,7 +165,7 @@ function App() {
   const [renameValue, setRenameValue] = useState("");
   const [deletingChat, setDeletingChat] = useState(null);
   const [showChats, setShowChats] = useState(true);
-  const { colorMode, toggleColorMode } = useColorMode();
+  const { colorMode, toggleColorMode, setColorMode } = useColorMode();
   const { isOpen: isSidebarOpen, onToggle: toggleSidebar } = useDisclosure();
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
   const { isOpen: isSystemPromptOpen, onOpen: onSystemPromptOpen, onClose: onSystemPromptClose } = useDisclosure();
@@ -378,6 +407,34 @@ function App() {
     chatRef.current?.scrollTo(0, chatRef.current.scrollHeight);
   }, [messages, loading]);
 
+  // 处理颜色主题变化
+  useEffect(() => {
+    switch (colorTheme) {
+      case "Light":
+        setColorMode("light");
+        break;
+      case "Classic":
+        // Classic 主题使用深色模式，但使用经典的配色方案
+        setColorMode("dark");
+        break;
+      case "Auto":
+      default:
+        // Auto 模式根据系统偏好设置
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        setColorMode(mediaQuery.matches ? 'dark' : 'light');
+
+        // 监听系统主题变化
+        const handleChange = (e) => {
+          if (colorTheme === "Auto") {
+            setColorMode(e.matches ? 'dark' : 'light');
+          }
+        };
+        mediaQuery.addEventListener('change', handleChange);
+
+        return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  }, [colorTheme, setColorMode]);
+
   // 键盘快捷键：Cmd/Ctrl + B 切换聊天列表显示
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -519,14 +576,13 @@ function App() {
   };
 
   return (
-    <ChakraProvider>
-      <Flex
-        height="100vh"
-        width="100vw"
-        bg={colorMode === "dark" ? "gray.800" : "gray.50"}
-        position="relative"
-        overflow="hidden"
-      >
+    <Flex
+      height="100vh"
+      width="100vw"
+      bg={colorMode === "dark" ? "gray.800" : "gray.50"}
+      position="relative"
+      overflow="hidden"
+    >
         {/* 移动端遮罩层 */}
         {isSidebarOpen && (
           <Box
@@ -896,10 +952,9 @@ function App() {
             </Box>
           </Box>
         </Flex>
-      </Flex>
 
-      {/* Settings Modal */}
-      <Modal isOpen={isSettingsOpen} onClose={handleSettingsCancel} size="6xl">
+        {/* Settings Modal */}
+        <Modal isOpen={isSettingsOpen} onClose={handleSettingsCancel} size="6xl">
         <ModalOverlay />
         <ModalContent maxW="800px" maxH="80vh">
           <ModalHeader
@@ -1327,6 +1382,12 @@ function App() {
           </ModalFooter>
         </ModalContent>
       </Modal>
+      </Flex>
+    );
+  }function App() {
+  return (
+    <ChakraProvider theme={theme}>
+      <AppContent />
     </ChakraProvider>
   );
 }
