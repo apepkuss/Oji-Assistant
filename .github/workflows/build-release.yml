@@ -20,13 +20,16 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Clean npm cache and install dependencies
+        run: |
+          chmod +x ./scripts/install-deps.sh
+          ./scripts/install-deps.sh
 
       - name: Build Web app
         run: npm run build
         env:
           VITE_APP_VERSION: ${{ github.ref_name }}
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Upload web build artifacts
         uses: actions/upload-artifact@v4
@@ -65,11 +68,15 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Clean npm cache and install dependencies
+        run: |
+          chmod +x ./scripts/install-deps.sh
+          ./scripts/install-deps.sh
 
       - name: Build React app
         run: npm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Build Electron app
         run: npm run build:${{ matrix.platform }}
