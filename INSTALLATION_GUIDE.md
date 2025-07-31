@@ -1,3 +1,7 @@
+<div align = "right">
+<a href="INSTALLATION_GUIDE_ZH.md">简体中文</a>
+</div>
+
 # Oji Assistant - Installation Guide
 
 This guide explains how to download and install Oji Assistant on different platforms, and how to use the various release assets.
