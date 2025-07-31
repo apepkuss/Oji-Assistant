@@ -244,8 +244,8 @@ jobs:
           # Create a temporary directory for unique files
           mkdir -p /tmp/unique_files
 
-          # Copy unique files (based on filename, not path)
-          find artifacts/ -type f | while read file; do
+          # Copy unique files (based on filename, not path) but exclude web-build
+          find artifacts/ -type f -not -path "*/web-build/*" | while read file; do
             filename=$(basename "$file")
             if [ ! -f "/tmp/unique_files/$filename" ]; then
               cp "$file" "/tmp/unique_files/"
@@ -255,10 +255,22 @@ jobs:
             fi
           done
 
+          # Preserve web-build directory
+          if [ -d "artifacts/web-build" ]; then
+            cp -r artifacts/web-build /tmp/web-build-backup
+            echo "Backed up web-build directory"
+          fi
+
           # Replace artifacts with unique files
           rm -rf artifacts/
           mkdir -p artifacts/release-files/
           cp -r /tmp/unique_files/* artifacts/release-files/ 2>/dev/null || true
+
+          # Restore web-build directory
+          if [ -d "/tmp/web-build-backup" ]; then
+            cp -r /tmp/web-build-backup artifacts/web-build
+            echo "Restored web-build directory"
+          fi
 
           # List final files for upload
           echo "Final files to be uploaded:"
@@ -273,9 +285,19 @@ jobs:
 
       - name: Create web app archive
         run: |
-          cd artifacts/web-build
-          zip -r ../../oji-web-${{ github.ref_name }}.zip .
-          cd ../..
+          if [ -d "artifacts/web-build" ]; then
+            echo "Found web-build directory"
+            cd artifacts/web-build
+            zip -r ../../oji-web-${{ github.ref_name }}.zip .
+            cd ../..
+            echo "Created web archive: oji-web-${{ github.ref_name }}.zip"
+            ls -la oji-web-${{ github.ref_name }}.zip
+          else
+            echo "Error: web-build directory not found"
+            echo "Available directories in artifacts:"
+            ls -la artifacts/
+            exit 1
+          fi
 
       - name: List exact files to upload
         run: |
