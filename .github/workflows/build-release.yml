@@ -234,47 +234,86 @@ jobs:
       - name: Display downloaded files
         run: find artifacts/ -type f -exec ls -la {} \;
 
-      - name: Remove duplicate files and debug files
+      - name: Extract and filter release files
         run: |
-          # Remove debug files that shouldn't be in release
-          find artifacts/ -name "builder-debug.yml" -delete || true
-          find artifacts/ -name "builder-effective-config.yaml" -delete || true
-          find artifacts/ -name "*.blockmap" -delete || true
-
-          # Create a temporary directory for unique files
-          mkdir -p /tmp/unique_files
-
-          # Copy unique files (based on filename, not path) but exclude web-build
-          find artifacts/ -type f -not -path "*/web-build/*" | while read file; do
-            filename=$(basename "$file")
-            if [ ! -f "/tmp/unique_files/$filename" ]; then
-              cp "$file" "/tmp/unique_files/"
-              echo "Copied: $filename"
-            else
-              echo "Skipping duplicate: $filename from $file"
-            fi
-          done
+          # Create directory for final release files
+          mkdir -p release-files/
 
           # Preserve web-build directory
           if [ -d "artifacts/web-build" ]; then
-            cp -r artifacts/web-build /tmp/web-build-backup
+            cp -r artifacts/web-build ./web-build-backup
             echo "Backed up web-build directory"
           fi
 
-          # Replace artifacts with unique files
-          rm -rf artifacts/
-          mkdir -p artifacts/release-files/
-          cp -r /tmp/unique_files/* artifacts/release-files/ 2>/dev/null || true
+          # Find and copy main distribution files using a simpler approach
+          echo "Finding and copying release files..."
 
-          # Restore web-build directory
-          if [ -d "/tmp/web-build-backup" ]; then
-            cp -r /tmp/web-build-backup artifacts/web-build
-            echo "Restored web-build directory"
-          fi
+          # Copy .dmg files (macOS)
+          find artifacts/ -name "*.dmg" | while read file; do
+            filename=$(basename "$file")
+            if [ ! -f "release-files/$filename" ]; then
+              cp "$file" "release-files/"
+              echo "Copied: $filename"
+            fi
+          done
+
+          # Copy .exe files (Windows)
+          find artifacts/ -name "*.exe" | while read file; do
+            filename=$(basename "$file")
+            if [ ! -f "release-files/$filename" ]; then
+              cp "$file" "release-files/"
+              echo "Copied: $filename"
+            fi
+          done
+
+          # Copy .AppImage files (Linux)
+          find artifacts/ -name "*.AppImage" | while read file; do
+            filename=$(basename "$file")
+            if [ ! -f "release-files/$filename" ]; then
+              cp "$file" "release-files/"
+              echo "Copied: $filename"
+            fi
+          done
+
+          # Copy .deb files (Linux)
+          find artifacts/ -name "*.deb" | while read file; do
+            filename=$(basename "$file")
+            if [ ! -f "release-files/$filename" ]; then
+              cp "$file" "release-files/"
+              echo "Copied: $filename"
+            fi
+          done
+
+          # Copy .rpm files (Linux)
+          find artifacts/ -name "*.rpm" | while read file; do
+            filename=$(basename "$file")
+            if [ ! -f "release-files/$filename" ]; then
+              cp "$file" "release-files/"
+              echo "Copied: $filename"
+            fi
+          done
+
+          # Copy .zip files from release directory (platform packages)
+          find artifacts/ -name "*.zip" -path "*/release/*" | while read file; do
+            filename=$(basename "$file")
+            if [ ! -f "release-files/$filename" ]; then
+              cp "$file" "release-files/"
+              echo "Copied: $filename"
+            fi
+          done
+
+          # Copy latest*.yml files (auto-updater configs)
+          find artifacts/ -name "latest*.yml" | while read file; do
+            filename=$(basename "$file")
+            if [ ! -f "release-files/$filename" ]; then
+              cp "$file" "release-files/"
+              echo "Copied: $filename"
+            fi
+          done
 
           # List final files for upload
-          echo "Final files to be uploaded:"
-          find artifacts/release-files/ -type f -exec basename {} \; | sort
+          echo "Final release files:"
+          ls -la release-files/
 
       - name: Delete existing release if exists
         continue-on-error: true
@@ -285,29 +324,26 @@ jobs:
 
       - name: Create web app archive
         run: |
-          if [ -d "artifacts/web-build" ]; then
-            echo "Found web-build directory"
-            cd artifacts/web-build
-            zip -r ../../oji-web-${{ github.ref_name }}.zip .
-            cd ../..
+          if [ -d "web-build-backup" ]; then
+            echo "Found web-build backup directory"
+            cd web-build-backup
+            zip -r ../oji-web-${{ github.ref_name }}.zip .
+            cd ..
             echo "Created web archive: oji-web-${{ github.ref_name }}.zip"
             ls -la oji-web-${{ github.ref_name }}.zip
           else
-            echo "Error: web-build directory not found"
-            echo "Available directories in artifacts:"
-            ls -la artifacts/
+            echo "Error: web-build backup directory not found"
+            echo "Available directories:"
+            ls -la
             exit 1
           fi
 
       - name: List exact files to upload
         run: |
           echo "=== Files to be uploaded ==="
-          find artifacts/release-files -name "*.dmg" 2>/dev/null || true
-          find artifacts/release-files -name "*.zip" 2>/dev/null || true
-          find artifacts/release-files -name "*.exe" 2>/dev/null || true
-          find artifacts/release-files -name "*.AppImage" 2>/dev/null || true
-          find artifacts/release-files -name "*.deb" 2>/dev/null || true
-          find artifacts/release-files -name "*.rpm" 2>/dev/null || true
+          echo "Release files:"
+          ls -la release-files/
+          echo "Web archive:"
           ls -la oji-web-${{ github.ref_name }}.zip 2>/dev/null || true
 
       - name: Create Release
@@ -315,7 +351,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/release-files/*
+            release-files/*
             oji-web-${{ github.ref_name }}.zip
           body: |
             ## 🚀 Oji ${{ github.ref_name }}
@@ -386,7 +422,7 @@ jobs:
         run: |
           echo "Main release creation failed, trying GitHub CLI..."
           gh release create ${{ github.ref_name }} \
-            artifacts/release-files/* \
+            release-files/* \
             oji-web-${{ github.ref_name }}.zip \
             --title "Oji ${{ github.ref_name }}" \
             --notes "Cross-platform desktop application and web app release" || true
