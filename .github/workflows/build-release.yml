@@ -247,18 +247,16 @@ jobs:
           # - *.rpm: Red Hat/Fedora packages
           # - oji-web-*.zip: Web application bundle
           #
-          # OPTIONAL FILES (configurable):
-          # - latest*.yml: Auto-updater configuration files
-          #   * latest.yml: Windows auto-update config
-          #   * latest-mac.yml: macOS auto-update config
-          #   * latest-linux.yml: Linux auto-update config
-          #   (Only needed if your app supports auto-updates)
-          #
-          # EXCLUDED FILES (internal/development only):
+          # EXCLUDED FILES (not needed for current build types):
           # - elevate.exe: Windows UAC elevation tool (not needed by users)
           # - *.pak: Chromium resource files (bundled in app)
           # - *.dll/*.so/*.dylib: System libraries (bundled in app)
           # - Individual zip files that duplicate dmg functionality
+          #
+          # INCLUDED AUTO-UPDATE FILES:
+          # - latest.yml: Windows auto-updater (for NSIS installer versions)
+          # - latest-mac.yml: macOS auto-updater (dmg versions support updates)
+          # - latest-linux.yml: Linux auto-updater (deb/rpm/AppImage can support updates)
           # ================================================================
 
           # Create directory for final release files
@@ -282,22 +280,12 @@ jobs:
               cp "$file" "release-files/"
               echo "Copied: $filename (macOS installer)"
             fi
-          done          # Copy .exe files (Windows) - only installers, not portable exe
+          done          # Copy .exe files (Windows) - NSIS installer only
           find artifacts/ -name "*Setup*.exe" -o -name "*setup*.exe" | while read file; do
             filename=$(basename "$file")
             if [ ! -f "release-files/$filename" ]; then
               cp "$file" "release-files/"
-              echo "Copied: $filename"
-            fi
-          done
-
-          # Also copy main exe files that are not elevate.exe
-          find artifacts/ -name "*.exe" | grep -v -E "(elevate\.exe|Setup|setup)" | while read file; do
-            filename=$(basename "$file")
-            # Skip if it's just the app name without version (likely portable)
-            if [[ "$filename" =~ [0-9]+\.[0-9]+\.[0-9]+ ]] && [ ! -f "release-files/$filename" ]; then
-              cp "$file" "release-files/"
-              echo "Copied: $filename"
+              echo "Copied: $filename (Windows installer)"
             fi
           done
 
@@ -340,13 +328,16 @@ jobs:
             fi
           done
 
-          # Copy latest*.yml files (auto-updater configs) - only if you want auto-update
-          # Comment out the next block if you don't need auto-update functionality
+          # Copy latest*.yml files (auto-updater configs) - all platforms support auto-update
+          # latest.yml (Windows NSIS installer) - ENABLED
+          # latest-mac.yml (macOS dmg) - ENABLED
+          # latest-linux.yml (Linux deb/rpm/AppImage) - ENABLED
           find artifacts/ -name "latest*.yml" | while read file; do
             filename=$(basename "$file")
             if [ ! -f "release-files/$filename" ]; then
               cp "$file" "release-files/"
-              echo "Copied: $filename (auto-updater config)"
+              platform=$(echo $filename | sed 's/latest-//;s/latest//;s/.yml//' | sed 's/^$/windows/')
+              echo "Copied: $filename (auto-updater config for $platform)"
             fi
           done
 
@@ -401,7 +392,7 @@ jobs:
 
             #### 🖥️ Desktop Versions
             - **macOS**: Download `.dmg` file (supports Intel and Apple Silicon)
-            - **Windows**: Download `.exe` installer
+            - **Windows**: Download `.exe` installer (supports auto-update)
             - **Linux**: Download `.AppImage`, `.deb`, or `.rpm` package
 
             #### 🌐 Web Version
@@ -420,6 +411,7 @@ jobs:
             **Windows**
             1. Download the `.exe` installer
             2. Run the installer and follow the setup wizard
+            3. App will be installed and supports automatic updates
 
             **Linux**
             - **AppImage**: Download and add execute permission with `chmod +x`, then run directly
