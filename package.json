@@ -119,11 +119,5 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }
-  },
-  "overrides": {
-    "@rollup/rollup-linux-x64-gnu": "^4.0.0"
-  },
-  "resolutions": {
-    "@rollup/rollup-linux-x64-gnu": "^4.0.0"
   }
 }

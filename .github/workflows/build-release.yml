@@ -35,13 +35,13 @@ jobs:
           npm cache clean --force
           rm -rf node_modules package-lock.json
           npm install --legacy-peer-deps
-          npm install @rollup/rollup-linux-x64-gnu --save-optional
 
       - name: Build Web app
         run: npm run build
         env:
           VITE_APP_VERSION: ${{ github.ref_name }}
           NODE_OPTIONS: --max-old-space-size=4096
+          ROLLUP_WATCH: false
 
       - name: Upload web build artifacts
         uses: actions/upload-artifact@v4
@@ -108,7 +108,6 @@ jobs:
           npm cache clean --force
           rm -rf node_modules package-lock.json
           npm install --legacy-peer-deps
-          npm install @rollup/rollup-linux-x64-gnu --save-optional
 
       - name: Clean npm cache and install dependencies (Windows)
         if: matrix.os == 'windows-latest'
