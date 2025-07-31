@@ -234,6 +234,24 @@ jobs:
       - name: Display downloaded files
         run: find artifacts/ -type f -exec ls -la {} \;
 
+      - name: Remove duplicate files and debug files
+        run: |
+          # Remove debug files that shouldn't be in release
+          find artifacts/ -name "builder-debug.yml" -delete || true
+          find artifacts/ -name "builder-effective-config.yaml" -delete || true
+          find artifacts/ -name "*.blockmap" -delete || true
+
+          # List final files for upload
+          echo "Files to be uploaded:"
+          find artifacts/ -type f -exec basename {} \; | sort | uniq -c | sort -nr
+
+      - name: Delete existing release if exists
+        continue-on-error: true
+        run: |
+          gh release delete ${{ github.ref_name }} --yes || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create web app archive
         run: |
           cd artifacts/web-build
@@ -241,10 +259,16 @@ jobs:
           cd ../..
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/**/*
+            artifacts/mac-build/*.dmg
+            artifacts/mac-build/*.zip
+            artifacts/win-build/*.exe
+            artifacts/win-build/*Setup*.exe
+            artifacts/linux-build/*.AppImage
+            artifacts/linux-build/*.deb
+            artifacts/linux-build/*.rpm
             oji-web-${{ github.ref_name }}.zip
           body: |
             ## 🚀 Oji ${{ github.ref_name }}
@@ -307,5 +331,6 @@ jobs:
             - Web version supports all modern browsers
           draft: false
           prerelease: false
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
