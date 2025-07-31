@@ -3,7 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "description": "Oji - AI-powered desktop assistant",
-  "author": "SecondState Team",
+  "author": {
+    "name": "apepkuss",
+    "email": "xin.sam.liu@hotmail.com"
+  },
   "type": "module",
   "main": "electron/main.js",
   "homepage": "./",
@@ -111,7 +114,9 @@
           "arch": ["x64"]
         }
       ],
-      "category": "Office"
+      "category": "Office",
+      "maintainer": "apepkuss <xin.sam.liu@hotmail.com>",
+      "vendor": "apepkuss"
     },
     "nsis": {
       "oneClick": false,

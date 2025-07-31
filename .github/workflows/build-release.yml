@@ -36,6 +36,13 @@ jobs:
           rm -rf node_modules package-lock.json
           npm install --legacy-peer-deps
 
+      - name: Update package version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          npm version $VERSION --no-git-tag-version
+          echo "Updated version to $VERSION"
+
       - name: Build Web app
         run: npm run build
         env:
@@ -109,6 +116,14 @@ jobs:
           rm -rf node_modules package-lock.json
           npm install --legacy-peer-deps
 
+      - name: Update package version (Linux)
+        if: matrix.os == 'ubuntu-latest' && startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          npm version $VERSION --no-git-tag-version
+          echo "Updated version to $VERSION"
+
       - name: Clean npm cache and install dependencies (Windows)
         if: matrix.os == 'windows-latest'
         shell: powershell
@@ -119,6 +134,14 @@ jobs:
           npm install --legacy-peer-deps
           npm install vite@^7.0.4 --save-dev
           npm rebuild
+
+      - name: Update package version (Windows)
+        if: matrix.os == 'windows-latest' && startsWith(github.ref, 'refs/tags/v')
+        shell: powershell
+        run: |
+          $version = $env:GITHUB_REF -replace 'refs/tags/v', ''
+          npm version $version --no-git-tag-version
+          Write-Host "Updated version to $version"
 
       - name: Verify Vite installation (Windows)
         if: matrix.os == 'windows-latest'
@@ -151,6 +174,14 @@ jobs:
           npm cache clean --force
           rm -rf node_modules package-lock.json
           npm install --legacy-peer-deps
+
+      - name: Update package version (macOS)
+        if: matrix.os == 'macos-latest' && startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          npm version $VERSION --no-git-tag-version
+          echo "Updated version to $VERSION"
 
       - name: Verify installations
         run: |
