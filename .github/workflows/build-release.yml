@@ -236,6 +236,31 @@ jobs:
 
       - name: Extract and filter release files
         run: |
+          # ================================================================
+          # RELEASE FILES FILTERING EXPLANATION:
+          # ================================================================
+          # ESSENTIAL FILES (always include):
+          # - *.dmg: macOS disk image installers
+          # - *Setup*.exe: Windows installer executables
+          # - *.AppImage: Linux portable applications
+          # - *.deb: Debian/Ubuntu packages
+          # - *.rpm: Red Hat/Fedora packages
+          # - oji-web-*.zip: Web application bundle
+          #
+          # OPTIONAL FILES (configurable):
+          # - latest*.yml: Auto-updater configuration files
+          #   * latest.yml: Windows auto-update config
+          #   * latest-mac.yml: macOS auto-update config
+          #   * latest-linux.yml: Linux auto-update config
+          #   (Only needed if your app supports auto-updates)
+          #
+          # EXCLUDED FILES (internal/development only):
+          # - elevate.exe: Windows UAC elevation tool (not needed by users)
+          # - *.pak: Chromium resource files (bundled in app)
+          # - *.dll/*.so/*.dylib: System libraries (bundled in app)
+          # - Individual zip files that duplicate dmg functionality
+          # ================================================================
+
           # Create directory for final release files
           mkdir -p release-files/
 
@@ -248,17 +273,17 @@ jobs:
           # Find and copy main distribution files using a simpler approach
           echo "Finding and copying release files..."
 
-          # Copy .dmg files (macOS)
+          # === ESSENTIAL FILES FOR END USERS ===
+
+          # Copy .dmg files (macOS installers)
           find artifacts/ -name "*.dmg" | while read file; do
             filename=$(basename "$file")
             if [ ! -f "release-files/$filename" ]; then
               cp "$file" "release-files/"
-              echo "Copied: $filename"
+              echo "Copied: $filename (macOS installer)"
             fi
-          done
-
-          # Copy .exe files (Windows)
-          find artifacts/ -name "*.exe" | while read file; do
+          done          # Copy .exe files (Windows) - only installers, not portable exe
+          find artifacts/ -name "*Setup*.exe" -o -name "*setup*.exe" | while read file; do
             filename=$(basename "$file")
             if [ ! -f "release-files/$filename" ]; then
               cp "$file" "release-files/"
@@ -266,48 +291,62 @@ jobs:
             fi
           done
 
-          # Copy .AppImage files (Linux)
+          # Also copy main exe files that are not elevate.exe
+          find artifacts/ -name "*.exe" | grep -v -E "(elevate\.exe|Setup|setup)" | while read file; do
+            filename=$(basename "$file")
+            # Skip if it's just the app name without version (likely portable)
+            if [[ "$filename" =~ [0-9]+\.[0-9]+\.[0-9]+ ]] && [ ! -f "release-files/$filename" ]; then
+              cp "$file" "release-files/"
+              echo "Copied: $filename"
+            fi
+          done
+
+          # Copy .AppImage files (Linux portable applications)
           find artifacts/ -name "*.AppImage" | while read file; do
             filename=$(basename "$file")
             if [ ! -f "release-files/$filename" ]; then
               cp "$file" "release-files/"
-              echo "Copied: $filename"
+              echo "Copied: $filename (Linux portable app)"
             fi
           done
 
-          # Copy .deb files (Linux)
+          # Copy .deb files (Debian/Ubuntu packages)
           find artifacts/ -name "*.deb" | while read file; do
             filename=$(basename "$file")
             if [ ! -f "release-files/$filename" ]; then
               cp "$file" "release-files/"
-              echo "Copied: $filename"
+              echo "Copied: $filename (Debian/Ubuntu package)"
             fi
           done
 
-          # Copy .rpm files (Linux)
+          # Copy .rpm files (Red Hat/Fedora packages)
           find artifacts/ -name "*.rpm" | while read file; do
             filename=$(basename "$file")
             if [ ! -f "release-files/$filename" ]; then
               cp "$file" "release-files/"
-              echo "Copied: $filename"
+              echo "Copied: $filename (Red Hat/Fedora package)"
             fi
-          done
-
-          # Copy .zip files from release directory (platform packages)
+          done          # Copy .zip files from release directory (platform packages) - exclude duplicates
           find artifacts/ -name "*.zip" -path "*/release/*" | while read file; do
             filename=$(basename "$file")
+            # Skip if it's a duplicate of dmg (prefer dmg over zip for mac)
+            if [[ "$filename" =~ mac\.zip$ ]] && find release-files/ -name "*.dmg" | grep -q .; then
+              echo "Skipping $filename (dmg version preferred)"
+              continue
+            fi
             if [ ! -f "release-files/$filename" ]; then
               cp "$file" "release-files/"
               echo "Copied: $filename"
             fi
           done
 
-          # Copy latest*.yml files (auto-updater configs)
+          # Copy latest*.yml files (auto-updater configs) - only if you want auto-update
+          # Comment out the next block if you don't need auto-update functionality
           find artifacts/ -name "latest*.yml" | while read file; do
             filename=$(basename "$file")
             if [ ! -f "release-files/$filename" ]; then
               cp "$file" "release-files/"
-              echo "Copied: $filename"
+              echo "Copied: $filename (auto-updater config)"
             fi
           done
 

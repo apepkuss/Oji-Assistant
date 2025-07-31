@@ -90,14 +90,13 @@
     "win": {
       "target": [
         {
-          "target": "nsis",
-          "arch": ["x64", "ia32"]
-        },
-        {
           "target": "portable",
           "arch": ["x64", "ia32"]
         }
       ]
+    },
+    "portable": {
+      "artifactName": "${productName} ${version}.${ext}"
     },
     "linux": {
       "target": [
@@ -118,11 +117,12 @@
       "maintainer": "apepkuss <xin.sam.liu@hotmail.com>",
       "vendor": "apepkuss"
     },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
-    }
+    "deb": {
+      "packageName": "oji"
+    },
+    "rpm": {
+      "packageName": "oji"
+    },
+    "artifactName": "${productName}-${version}-${arch}.${ext}"
   }
 }
