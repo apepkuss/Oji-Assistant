@@ -388,6 +388,8 @@ jobs:
 
             Cross-platform desktop application and web app release
 
+            > **⚠️ macOS Users**: If you see "Oji is damaged" error, right-click the app and select "Open" to bypass Gatekeeper security. This app is not Apple-notarized but is safe to use.
+
             ### 📥 Downloads
 
             #### 🖥️ Desktop Versions
@@ -407,6 +409,11 @@ jobs:
             1. Download the `.dmg` file
             2. Open the downloaded file
             3. Drag the app to Applications folder
+            4. **If you see "Oji is damaged" error**: Right-click the app → "Open" → "Open" to bypass Gatekeeper
+
+            > **Note**: This app is not notarized by Apple. For first launch, you may need to:
+            > - Right-click the app and select "Open" instead of double-clicking
+            > - Or go to System Preferences → Security & Privacy → General → Allow apps downloaded from "App Store and identified developers"
 
             **Windows**
             1. Download the `.exe` installer
