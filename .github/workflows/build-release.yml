@@ -241,9 +241,28 @@ jobs:
           find artifacts/ -name "builder-effective-config.yaml" -delete || true
           find artifacts/ -name "*.blockmap" -delete || true
 
+          # Create a temporary directory for unique files
+          mkdir -p /tmp/unique_files
+
+          # Copy unique files (based on filename, not path)
+          find artifacts/ -type f | while read file; do
+            filename=$(basename "$file")
+            if [ ! -f "/tmp/unique_files/$filename" ]; then
+              cp "$file" "/tmp/unique_files/"
+              echo "Copied: $filename"
+            else
+              echo "Skipping duplicate: $filename from $file"
+            fi
+          done
+
+          # Replace artifacts with unique files
+          rm -rf artifacts/
+          mkdir -p artifacts/release-files/
+          cp -r /tmp/unique_files/* artifacts/release-files/ 2>/dev/null || true
+
           # List final files for upload
-          echo "Files to be uploaded:"
-          find artifacts/ -type f -exec basename {} \; | sort | uniq -c | sort -nr
+          echo "Final files to be uploaded:"
+          find artifacts/release-files/ -type f -exec basename {} \; | sort
 
       - name: Delete existing release if exists
         continue-on-error: true
@@ -261,12 +280,12 @@ jobs:
       - name: List exact files to upload
         run: |
           echo "=== Files to be uploaded ==="
-          find artifacts/mac-build -name "*.dmg" 2>/dev/null || true
-          find artifacts/mac-build -name "*.zip" 2>/dev/null || true
-          find artifacts/win-build -name "*.exe" 2>/dev/null || true
-          find artifacts/linux-build -name "*.AppImage" 2>/dev/null || true
-          find artifacts/linux-build -name "*.deb" 2>/dev/null || true
-          find artifacts/linux-build -name "*.rpm" 2>/dev/null || true
+          find artifacts/release-files -name "*.dmg" 2>/dev/null || true
+          find artifacts/release-files -name "*.zip" 2>/dev/null || true
+          find artifacts/release-files -name "*.exe" 2>/dev/null || true
+          find artifacts/release-files -name "*.AppImage" 2>/dev/null || true
+          find artifacts/release-files -name "*.deb" 2>/dev/null || true
+          find artifacts/release-files -name "*.rpm" 2>/dev/null || true
           ls -la oji-web-${{ github.ref_name }}.zip 2>/dev/null || true
 
       - name: Create Release
@@ -274,13 +293,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/mac-build/*.dmg
-            artifacts/mac-build/*.zip
-            artifacts/win-build/*.exe
-            artifacts/win-build/*Setup*.exe
-            artifacts/linux-build/*.AppImage
-            artifacts/linux-build/*.deb
-            artifacts/linux-build/*.rpm
+            artifacts/release-files/*
             oji-web-${{ github.ref_name }}.zip
           body: |
             ## 🚀 Oji ${{ github.ref_name }}
@@ -351,13 +364,7 @@ jobs:
         run: |
           echo "Main release creation failed, trying GitHub CLI..."
           gh release create ${{ github.ref_name }} \
-            artifacts/mac-build/*.dmg \
-            artifacts/mac-build/*.zip \
-            artifacts/win-build/*.exe \
-            artifacts/win-build/*Setup*.exe \
-            artifacts/linux-build/*.AppImage \
-            artifacts/linux-build/*.deb \
-            artifacts/linux-build/*.rpm \
+            artifacts/release-files/* \
             oji-web-${{ github.ref_name }}.zip \
             --title "Oji ${{ github.ref_name }}" \
             --notes "Cross-platform desktop application and web app release" || true
