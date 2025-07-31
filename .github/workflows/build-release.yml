@@ -22,8 +22,10 @@ jobs:
 
       - name: Clean npm cache and install dependencies
         run: |
-          chmod +x ./scripts/install-deps.sh
-          ./scripts/install-deps.sh
+          npm cache clean --force
+          rm -rf node_modules package-lock.json
+          npm install --legacy-peer-deps
+          npm install @rollup/rollup-linux-x64-gnu --save-optional
 
       - name: Build Web app
         run: npm run build
@@ -68,10 +70,45 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Clean npm cache and install dependencies
+      - name: Clean npm cache and install dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
         run: |
-          chmod +x ./scripts/install-deps.sh
-          ./scripts/install-deps.sh
+          npm cache clean --force
+          rm -rf node_modules package-lock.json
+          npm install --legacy-peer-deps
+          npm install @rollup/rollup-linux-x64-gnu --save-optional
+
+      - name: Clean npm cache and install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: |
+          npm cache clean --force
+          if exist node_modules rmdir /s /q node_modules
+          if exist package-lock.json del package-lock.json
+          npm install --legacy-peer-deps
+          npm rebuild
+
+      - name: Verify Vite installation (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: |
+          npx vite --version
+          dir node_modules\.bin\vite*
+
+      - name: Clean npm cache and install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          npm cache clean --force
+          rm -rf node_modules package-lock.json
+          npm install --legacy-peer-deps
+
+      - name: Verify installations
+        run: |
+          npm list vite
+          npm list @vitejs/plugin-react
+        continue-on-error: true
 
       - name: Build React app
         run: npm run build
