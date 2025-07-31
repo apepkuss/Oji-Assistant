@@ -11,6 +11,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:web": "vite build",
+    "build:react": "npx vite build",
     "preview": "vite preview",
     "preview:web": "vite preview --host",
     "lint": "eslint .",

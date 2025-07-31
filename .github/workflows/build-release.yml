@@ -112,20 +112,38 @@ jobs:
 
       - name: Clean npm cache and install dependencies (Windows)
         if: matrix.os == 'windows-latest'
-        shell: cmd
+        shell: powershell
         run: |
           npm cache clean --force
-          if exist node_modules rmdir /s /q node_modules
-          if exist package-lock.json del package-lock.json
+          if (Test-Path node_modules) { Remove-Item -Recurse -Force node_modules }
+          if (Test-Path package-lock.json) { Remove-Item package-lock.json }
           npm install --legacy-peer-deps
+          npm install vite@^7.0.4 --save-dev
           npm rebuild
 
       - name: Verify Vite installation (Windows)
         if: matrix.os == 'windows-latest'
-        shell: cmd
+        shell: powershell
         run: |
+          Write-Host "Checking npm list..."
+          npm list vite
+          Write-Host "Checking node_modules\.bin..."
+          Get-ChildItem node_modules\.bin\vite*
+          Write-Host "Checking PATH..."
+          $env:PATH
+          Write-Host "Checking if vite.cmd exists..."
+          if (Test-Path node_modules\.bin\vite.cmd) { Write-Host "vite.cmd found" } else { Write-Host "vite.cmd NOT found" }
+          Write-Host "Trying npx vite version..."
           npx vite --version
-          dir node_modules\.bin\vite*
+
+      - name: Add node_modules to PATH (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        run: |
+          $currentPath = $env:PATH
+          $nodeModulesBin = "$(pwd)\node_modules\.bin"
+          $env:PATH = "$nodeModulesBin;$currentPath"
+          Write-Host "Updated PATH: $env:PATH"
 
       - name: Clean npm cache and install dependencies (macOS)
         if: matrix.os == 'macos-latest'
@@ -141,7 +159,15 @@ jobs:
           npm list @vitejs/plugin-react
         continue-on-error: true
 
-      - name: Build React app
+      - name: Build React app (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        run: npm run build:react
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      - name: Build React app (Non-Windows)
+        if: matrix.os != 'windows-latest'
         run: npm run build
         env:
           NODE_OPTIONS: --max-old-space-size=4096
