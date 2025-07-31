@@ -1,0 +1,177 @@
+name: Build and Release Electron App
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Web app
+        run: npm run build
+        env:
+          VITE_APP_VERSION: ${{ github.ref_name }}
+
+      - name: Upload web build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: dist/
+          retention-days: 7
+
+      - name: Deploy to GitHub Pages
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: win
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build React app
+        run: npm run build
+
+      - name: Build Electron app
+        run: npm run build:${{ matrix.platform }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-build
+          path: release/
+          retention-days: 7
+
+  release:
+    needs: [build-web, build]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Display downloaded files
+        run: find artifacts/ -type f -exec ls -la {} \;
+
+      - name: Create web app archive
+        run: |
+          cd artifacts/web-build
+          zip -r ../../oji-web-${{ github.ref_name }}.zip .
+          cd ../..
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/**/*
+            oji-web-${{ github.ref_name }}.zip
+          body: |
+            ## 🚀 Oji ${{ github.ref_name }}
+
+            Cross-platform desktop application and web app release
+
+            ### 📥 Downloads
+
+            #### 🖥️ Desktop Versions
+            - **macOS**: Download `.dmg` file (supports Intel and Apple Silicon)
+            - **Windows**: Download `.exe` installer
+            - **Linux**: Download `.AppImage`, `.deb`, or `.rpm` package
+
+            #### 🌐 Web Version
+            - **Online Access**: [https://${{ github.repository_owner }}.github.io/Oji-Assistant](https://${{ github.repository_owner }}.github.io/Oji-Assistant)
+            - **Offline Deployment**: Download `oji-web-${{ github.ref_name }}.zip` file
+
+            ### 🛠️ Installation Instructions
+
+            #### 🖥️ Desktop Versions
+
+            **macOS**
+            1. Download the `.dmg` file
+            2. Open the downloaded file
+            3. Drag the app to Applications folder
+
+            **Windows**
+            1. Download the `.exe` installer
+            2. Run the installer and follow the setup wizard
+
+            **Linux**
+            - **AppImage**: Download and add execute permission with `chmod +x`, then run directly
+            - **DEB** (Ubuntu/Debian): Install using `sudo dpkg -i filename.deb`
+            - **RPM** (Fedora/RHEL): Install using `sudo rpm -i filename.rpm`
+
+            #### 🌐 Web Version
+
+            **Online Usage**
+            - Simply visit the link above to use Oji in your browser
+
+            **Local Deployment**
+            1. Download the `oji-web-${{ github.ref_name }}.zip` file
+            2. Extract to your web server directory
+            3. Access through web server (nginx, apache, or simple `python -m http.server`)
+
+            **Docker Deployment**
+            ```bash
+            # Extract web files
+            unzip oji-web-${{ github.ref_name }}.zip -d oji-web
+
+            # Deploy using nginx container
+            docker run -d -p 8080:80 -v $(pwd)/oji-web:/usr/share/nginx/html nginx
+
+            # Access at http://localhost:8080
+            ```
+
+            ### ⚙️ Configuration Notes
+            - Web and desktop versions have identical functionality
+            - Requires proper AI service endpoint URL configuration
+            - Web version supports all modern browsers
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oji CORS 测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .pending {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        input, button {
+            padding: 8px 12px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+        label {
+            display: inline-block;
+            width: 120px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Oji AI 服务 CORS 测试</h1>
+        <p>此页面用于测试 Axum AI 服务的跨域访问配置</p>
+
+        <!-- 配置区域 -->
+        <div class="test-section">
+            <h3>⚙️ 服务配置</h3>
+            <div class="input-group">
+                <label>Base URL:</label>
+                <input type="text" id="baseUrl" value="http://localhost:9068/v1" style="width: 300px;">
+            </div>
+            <div class="input-group">
+                <label>API Key:</label>
+                <input type="text" id="apiKey" placeholder="(可选)" style="width: 300px;">
+            </div>
+        </div>
+
+        <!-- CORS 预检测试 -->
+        <div class="test-section pending" id="preflightTest">
+            <h3>1️⃣ CORS 预检测试 (OPTIONS 请求)</h3>
+            <p>测试浏览器是否能发送 OPTIONS 预检请求</p>
+            <button onclick="testPreflight()">开始预检测试</button>
+            <div id="preflightResult"></div>
+        </div>
+
+        <!-- 简单请求测试 -->
+        <div class="test-section pending" id="simpleTest">
+            <h3>2️⃣ 简单 GET 请求测试</h3>
+            <p>测试是否能发送简单的跨域 GET 请求</p>
+            <button onclick="testSimpleRequest()">测试 GET 请求</button>
+            <div id="simpleResult"></div>
+        </div>
+
+        <!-- AI 聊天测试 -->
+        <div class="test-section pending" id="chatTest">
+            <h3>3️⃣ AI 聊天功能测试</h3>
+            <p>测试完整的 AI 聊天 API 调用</p>
+            <div class="input-group">
+                <label>测试消息:</label>
+                <input type="text" id="testMessage" value="Hello, how are you?" style="width: 300px;">
+            </div>
+            <button onclick="testChatAPI()">测试聊天 API</button>
+            <div id="chatResult"></div>
+        </div>
+
+        <!-- 流式响应测试 -->
+        <div class="test-section pending" id="streamTest">
+            <h3>4️⃣ 流式响应测试</h3>
+            <p>测试流式聊天响应是否支持跨域</p>
+            <button onclick="testStreamAPI()">测试流式响应</button>
+            <div id="streamResult"></div>
+        </div>
+
+        <!-- 总结 -->
+        <div class="test-section" id="summary">
+            <h3>📊 测试总结</h3>
+            <div id="summaryContent">点击上方按钮开始测试...</div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = {
+            preflight: null,
+            simple: null,
+            chat: null,
+            stream: null
+        };
+
+        function getBaseUrl() {
+            return document.getElementById('baseUrl').value.trim();
+        }
+
+        function getApiKey() {
+            return document.getElementById('apiKey').value.trim();
+        }
+
+        function updateTestSection(sectionId, status, content) {
+            const section = document.getElementById(sectionId);
+            section.className = `test-section ${status}`;
+            const resultDiv = section.querySelector('div[id$="Result"]');
+            if (resultDiv) {
+                resultDiv.innerHTML = content;
+            }
+        }
+
+        function updateSummary() {
+            const total = Object.keys(testResults).length;
+            const passed = Object.values(testResults).filter(r => r === true).length;
+            const failed = Object.values(testResults).filter(r => r === false).length;
+            const pending = total - passed - failed;
+
+            let summaryHtml = `
+                <p><strong>测试进度:</strong> ${passed + failed}/${total} 完成</p>
+                <p>✅ 通过: ${passed} | ❌ 失败: ${failed} | ⏳ 待测试: ${pending}</p>
+            `;
+
+            if (pending === 0) {
+                if (failed === 0) {
+                    summaryHtml += `
+                        <div style="background: #d4edda; padding: 10px; border-radius: 4px; margin-top: 10px;">
+                            <strong>🎉 所有测试通过！</strong><br>
+                            您的 Axum AI 服务完全支持 Web 版本的跨域访问。
+                        </div>
+                    `;
+                } else {
+                    summaryHtml += `
+                        <div style="background: #f8d7da; padding: 10px; border-radius: 4px; margin-top: 10px;">
+                            <strong>⚠️ 部分测试失败</strong><br>
+                            请检查 AI 服务配置和网络连接。
+                        </div>
+                    `;
+                }
+            }
+
+            document.getElementById('summaryContent').innerHTML = summaryHtml;
+        }
+
+        async function testPreflight() {
+            updateTestSection('preflightTest', 'pending', '正在测试 CORS 预检...');
+
+            try {
+                // 发送一个会触发预检的请求
+                const response = await fetch(`${getBaseUrl()}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': getApiKey() ? `Bearer ${getApiKey()}` : 'Bearer test'
+                    },
+                    body: JSON.stringify({
+                        model: "test",
+                        messages: [{"role": "user", "content": "test"}]
+                    })
+                });
+
+                testResults.preflight = true;
+                updateTestSection('preflightTest', 'success', `
+                    <p>✅ CORS 预检成功！</p>
+                    <p>状态码: ${response.status}</p>
+                    <p>服务器正确响应了 OPTIONS 预检请求</p>
+                `);
+            } catch (error) {
+                testResults.preflight = false;
+                updateTestSection('preflightTest', 'error', `
+                    <p>❌ CORS 预检失败</p>
+                    <p>错误: ${error.message}</p>
+                    <p>这通常表示服务器未正确配置 CORS</p>
+                `);
+            }
+            updateSummary();
+        }
+
+        async function testSimpleRequest() {
+            updateTestSection('simpleTest', 'pending', '正在测试简单 GET 请求...');
+
+            try {
+                // 测试一个简单的 GET 请求（如果有的话）
+                const response = await fetch(`${getBaseUrl().replace('/v1', '')}/health`, {
+                    method: 'GET'
+                });
+
+                if (response.ok) {
+                    testResults.simple = true;
+                    updateTestSection('simpleTest', 'success', `
+                        <p>✅ 简单请求成功！</p>
+                        <p>状态码: ${response.status}</p>
+                    `);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                // 如果没有 health 端点，尝试 OPTIONS 请求
+                try {
+                    const response = await fetch(getBaseUrl(), {
+                        method: 'OPTIONS'
+                    });
+                    testResults.simple = true;
+                    updateTestSection('simpleTest', 'success', `
+                        <p>✅ OPTIONS 请求成功！</p>
+                        <p>状态码: ${response.status}</p>
+                    `);
+                } catch (optionsError) {
+                    testResults.simple = false;
+                    updateTestSection('simpleTest', 'error', `
+                        <p>❌ 简单请求失败</p>
+                        <p>GET 错误: ${error.message}</p>
+                        <p>OPTIONS 错误: ${optionsError.message}</p>
+                    `);
+                }
+            }
+            updateSummary();
+        }
+
+        async function testChatAPI() {
+            updateTestSection('chatTest', 'pending', '正在测试 AI 聊天 API...');
+
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+
+                if (getApiKey()) {
+                    headers['Authorization'] = `Bearer ${getApiKey()}`;
+                }
+
+                const response = await fetch(`${getBaseUrl()}/chat/completions`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        model: "Unknown",
+                        messages: [
+                            {
+                                role: "user",
+                                content: document.getElementById('testMessage').value
+                            }
+                        ],
+                        stream: false
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    testResults.chat = true;
+                    updateTestSection('chatTest', 'success', `
+                        <p>✅ AI 聊天 API 调用成功！</p>
+                        <p>状态码: ${response.status}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `);
+                } else {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+            } catch (error) {
+                testResults.chat = false;
+                updateTestSection('chatTest', 'error', `
+                    <p>❌ AI 聊天 API 调用失败</p>
+                    <p>错误: ${error.message}</p>
+                    <p>请检查服务是否正在运行，以及 API 配置是否正确</p>
+                `);
+            }
+            updateSummary();
+        }
+
+        async function testStreamAPI() {
+            updateTestSection('streamTest', 'pending', '正在测试流式响应...');
+
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+
+                if (getApiKey()) {
+                    headers['Authorization'] = `Bearer ${getApiKey()}`;
+                }
+
+                const response = await fetch(`${getBaseUrl()}/chat/completions`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        model: "Unknown",
+                        messages: [
+                            {
+                                role: "user",
+                                content: "请简短回复：你好"
+                            }
+                        ],
+                        stream: true
+                    })
+                });
+
+                if (response.ok && response.body) {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let streamContent = '';
+                    let chunks = 0;
+
+                    try {
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+
+                            chunks++;
+                            const chunk = decoder.decode(value);
+                            streamContent += chunk;
+
+                            if (chunks >= 3) break; // 读取几个块就够了
+                        }
+
+                        testResults.stream = true;
+                        updateTestSection('streamTest', 'success', `
+                            <p>✅ 流式响应测试成功！</p>
+                            <p>状态码: ${response.status}</p>
+                            <p>接收到 ${chunks} 个数据块</p>
+                            <pre>${streamContent.substring(0, 500)}${streamContent.length > 500 ? '...' : ''}</pre>
+                        `);
+                    } finally {
+                        reader.releaseLock();
+                    }
+                } else {
+                    throw new Error(`HTTP ${response.status} 或无响应体`);
+                }
+            } catch (error) {
+                testResults.stream = false;
+                updateTestSection('streamTest', 'error', `
+                    <p>❌ 流式响应测试失败</p>
+                    <p>错误: ${error.message}</p>
+                    <p>流式响应可能需要特殊的 CORS 配置</p>
+                `);
+            }
+            updateSummary();
+        }
+
+        // 页面加载时初始化
+        window.onload = function() {
+            updateSummary();
+        };
+    </script>
+</body>
+</html>

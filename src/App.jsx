@@ -151,8 +151,8 @@ function AppContent() {
     { id: 1, name: "New Chat", messages: [] }
   ]);
   const [activeChat, setActiveChat] = useState(1);
-  const [baseUrl, setBaseUrl] = useState("http://localhost:9068/v1");
-  const [tempBaseUrl, setTempBaseUrl] = useState("http://localhost:9068/v1");
+  const [baseUrl, setBaseUrl] = useState(import.meta.env.VITE_DEFAULT_AI_SERVICE_BASE_URL || "http://localhost:9068/v1");
+  const [tempBaseUrl, setTempBaseUrl] = useState(import.meta.env.VITE_DEFAULT_AI_SERVICE_BASE_URL || "http://localhost:9068/v1");
   const [apiKey, setApiKey] = useState("");
   const [tempApiKey, setTempApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
@@ -558,6 +558,7 @@ function AppContent() {
         headers["Authorization"] = `Bearer ${apiKey.trim()}`;
       }
 
+      // 使用标准fetch进行网络请求
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: headers,
@@ -628,7 +629,17 @@ function AppContent() {
       }
     } catch (e) {
       console.error('Request failed:', e);
-      alert("请求失败: " + (e.message || "Unknown error"));
+      console.log('Request details:', {
+        baseUrl,
+        endpoint: `${baseUrl}/chat/completions`,
+        isElectron: !!window.electronAPI
+      });
+
+      let errorMessage = "请求失败: " + (e.message || "Unknown error");
+      if (e.message.includes('fetch')) {
+        errorMessage += "\n\n请检查:\n1. AI服务是否正在运行\n2. Base URL是否正确 (默认: http://localhost:9068/v1)\n3. 网络连接是否正常";
+      }
+      alert(errorMessage);
     } finally {
       setLoading(false);
       // 将焦点返回到输入框
@@ -1126,7 +1137,7 @@ function AppContent() {
                     color: "blue.500"
                   }}
                 >
-                  Chat
+                  Server
                 </Tab>
                 <Tab
                   justifyContent="flex-start"
@@ -1138,7 +1149,7 @@ function AppContent() {
                     color: "blue.500"
                   }}
                 >
-                  Server
+                  Chat
                 </Tab>
                 <Tab
                   justifyContent="flex-start"
@@ -1188,7 +1199,7 @@ function AppContent() {
                         p={4}
                         borderRadius="md"
                       >
-                        <Text mb={2}>You are all up to date! The current version is {packageInfo.version}.</Text>
+                        <Text mb={2}>You are all up to date! The current version is {import.meta.env.VITE_APP_VERSION || packageInfo.version}.</Text>
                       </Box>
                     </Box>
 
@@ -1231,14 +1242,6 @@ function AppContent() {
                         </FormControl>
                       </VStack>
                     </Box>
-                  </VStack>
-                </TabPanel>
-
-                {/* Chat Tab */}
-                <TabPanel p={0}>
-                  <VStack spacing={6} align="stretch">
-                    <Heading size="md">Chat Settings</Heading>
-                    <Text color="gray.500">Chat configuration options will be available here.</Text>
                   </VStack>
                 </TabPanel>
 
@@ -1330,6 +1333,14 @@ function AppContent() {
                         </FormControl>
                       </VStack>
                     </Box>
+                  </VStack>
+                </TabPanel>
+
+                {/* Chat Tab */}
+                <TabPanel p={0}>
+                  <VStack spacing={6} align="stretch">
+                    <Heading size="md">Chat Settings</Heading>
+                    <Text color="gray.500">Chat configuration options will be available here.</Text>
                   </VStack>
                 </TabPanel>
 
