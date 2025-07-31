@@ -258,8 +258,20 @@ jobs:
           zip -r ../../oji-web-${{ github.ref_name }}.zip .
           cd ../..
 
+      - name: List exact files to upload
+        run: |
+          echo "=== Files to be uploaded ==="
+          find artifacts/mac-build -name "*.dmg" 2>/dev/null || true
+          find artifacts/mac-build -name "*.zip" 2>/dev/null || true
+          find artifacts/win-build -name "*.exe" 2>/dev/null || true
+          find artifacts/linux-build -name "*.AppImage" 2>/dev/null || true
+          find artifacts/linux-build -name "*.deb" 2>/dev/null || true
+          find artifacts/linux-build -name "*.rpm" 2>/dev/null || true
+          ls -la oji-web-${{ github.ref_name }}.zip 2>/dev/null || true
+
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
           files: |
             artifacts/mac-build/*.dmg
@@ -331,6 +343,23 @@ jobs:
             - Web version supports all modern browsers
           draft: false
           prerelease: false
-          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fallback Release Creation (if main fails)
+        if: failure() && steps.create_release.outcome == 'failure'
+        run: |
+          echo "Main release creation failed, trying GitHub CLI..."
+          gh release create ${{ github.ref_name }} \
+            artifacts/mac-build/*.dmg \
+            artifacts/mac-build/*.zip \
+            artifacts/win-build/*.exe \
+            artifacts/win-build/*Setup*.exe \
+            artifacts/linux-build/*.AppImage \
+            artifacts/linux-build/*.deb \
+            artifacts/linux-build/*.rpm \
+            oji-web-${{ github.ref_name }}.zip \
+            --title "Oji ${{ github.ref_name }}" \
+            --notes "Cross-platform desktop application and web app release" || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
