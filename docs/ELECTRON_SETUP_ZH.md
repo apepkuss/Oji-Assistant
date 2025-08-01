@@ -45,7 +45,6 @@
 ### Windows
 
 - `.exe` - NSIS 安装程序
-- `.exe` (portable) - 便携版本
 - 支持 64位 和 32位
 
 ### Linux

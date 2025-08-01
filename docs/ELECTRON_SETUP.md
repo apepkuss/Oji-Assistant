@@ -49,7 +49,6 @@ This project has configured a complete cross-platform automated build and releas
 ### Windows
 
 - `.exe` - NSIS installer
-- `.exe` (portable) - Portable version
 - Supports 64-bit and 32-bit
 
 ### Linux
