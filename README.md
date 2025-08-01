@@ -125,7 +125,7 @@ npm run build:web
 
 ### Web Deployment
 
-See [WEB_DEPLOYMENT.md](./docs/WEB_DEPLOYMENT.md) for detailed deployment instructions including:
+See [WEB_DEPLOYMENT.md](./docs/WEB_DEPLOYMENT.md) | [网页部署指南](./docs/WEB_DEPLOYMENT_ZH.md) for detailed deployment instructions including:
 
 - GitHub Pages automatic deployment
 - Docker deployment
