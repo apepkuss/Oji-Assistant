@@ -1,0 +1,17 @@
+# Documentation
+
+This directory contains all the documentation files for Oji Assistant.
+
+## Files
+
+- **[INSTALLATION_GUIDE.md](INSTALLATION_GUIDE.md)** - Complete installation guide for all platforms (English)
+- **[INSTALLATION_GUIDE_ZH.md](INSTALLATION_GUIDE_ZH.md)** - Complete installation guide for all platforms (中文)
+- **[ELECTRON_SETUP.md](ELECTRON_SETUP.md)** - Electron app setup and distribution guide (中文)
+- **[WEB_DEPLOYMENT.md](WEB_DEPLOYMENT.md)** - Web version deployment guide (中文)
+- **[GITHUB_PAGES_SETUP.md](GITHUB_PAGES_SETUP.md)** - GitHub Pages configuration guide (中文)
+
+## Quick Links
+
+- [Main README](../README.md)
+- [Installation Guide](INSTALLATION_GUIDE.md)
+- [Web Deployment](WEB_DEPLOYMENT.md)

@@ -12,7 +12,7 @@ Oji is available as native desktop applications for all major platforms:
 - **Windows**: Native app with installer
 - **Linux**: AppImage, DEB, and RPM packages
 
-**📖 For detailed installation instructions, see:** [Desktop Installation Guide](INSTALLATION_GUIDE.md) | [桌面安装指南](INSTALLATION_GUIDE_ZH.md)
+**📖 For detailed installation instructions, see:** [Desktop Installation Guide](docs/INSTALLATION_GUIDE.md) | [桌面安装指南](docs/INSTALLATION_GUIDE_ZH.md)
 
 ### 🌐 Web App
 
@@ -23,7 +23,7 @@ Access Oji directly in your browser or deploy your own instance:
 - **PWA Support**: Can be installed as a desktop app from your browser
 - **Mobile Friendly**: Responsive design for mobile devices
 
-**📖 For detailed web installation and deployment instructions, see:** [Web Installation Guide](INSTALLATION_GUIDE.md#-web-version) | [网页版安装指南](INSTALLATION_GUIDE_ZH.md#-网页版本)
+**📖 For detailed web installation and deployment instructions, see:** [Web Installation Guide](docs/INSTALLATION_GUIDE.md#-web-version) | [网页版安装指南](docs/INSTALLATION_GUIDE_ZH.md#-网页版本)
 
 ## 🔨 Build from Source
 
@@ -125,7 +125,7 @@ npm run build:web
 
 ### Web Deployment
 
-See [WEB_DEPLOYMENT.md](./WEB_DEPLOYMENT.md) for detailed deployment instructions including:
+See [WEB_DEPLOYMENT.md](./docs/WEB_DEPLOYMENT.md) for detailed deployment instructions including:
 
 - GitHub Pages automatic deployment
 - Docker deployment
@@ -135,7 +135,7 @@ See [WEB_DEPLOYMENT.md](./WEB_DEPLOYMENT.md) for detailed deployment instruction
 
 ### Desktop Distribution
 
-See [ELECTRON_SETUP.md](./ELECTRON_SETUP.md) for detailed Electron app setup and distribution.
+See [ELECTRON_SETUP.md](./docs/ELECTRON_SETUP.md) for detailed Electron app setup and distribution.
 
 GitHub Actions automatically builds and releases desktop apps when you create a version tag:
 

@@ -58,60 +58,66 @@ Each Oji release includes multiple files for different platforms and use cases:
 
 ### macOS
 
-**Choose the right version:**
-- **Intel Macs**: Download `Oji-x.x.x.dmg`
-- **Apple Silicon (M1/M2)**: Download `Oji-x.x.x-arm64.dmg`
+- **Choose the right version:**
+  - **Intel Macs**: Download `Oji-x.x.x.dmg`
+  - **Apple Silicon (M1/M2)**: Download `Oji-x.x.x-arm64.dmg`
 
-**Installation steps:**
-1. Download the appropriate `.dmg` file
-2. Double-click to mount the disk image
-3. Drag `Oji.app` to your Applications folder
-4. Launch from Applications or Launchpad
+- **Installation steps:**
+  1. Download the appropriate `.dmg` file
+  2. Double-click to mount the disk image
+  3. Drag `Oji.app` to your Applications folder
+  4. Launch from Applications or Launchpad
 
 **⚠️ Important - Gatekeeper Security Warning:**
 
 If you see "Oji is damaged and can't be opened" error:
 
-**Method 1: Terminal Command (Recommended)**
-```bash
-sudo xattr -rd com.apple.quarantine /Applications/Oji.app
-```
+- **Method 1: Terminal Command (Recommended)**
 
-**Method 2: System Settings**
-1. Go to System Settings → Privacy & Security
-2. Look for the blocked app notification
-3. Click "Open Anyway"
+  ```bash
+  sudo xattr -rd com.apple.quarantine /Applications/Oji.app
+  ```
 
-**Method 3: Right-click Method**
-1. Right-click `Oji.app` → "Open" (don't double-click)
-2. Click "Open" in the warning dialog
-3. If still blocked, use Method 1
+- **Method 2: System Settings**
 
-> **Note**: This security warning appears because the app is not notarized by Apple. The app is safe to use.
+  1. Go to System Settings → Privacy & Security
+  2. Look for the blocked app notification
+  3. Click "Open Anyway"
+
+- **Method 3: Right-click Method**
+
+  1. Right-click `Oji.app` → "Open" (don't double-click)
+  2. Click "Open" in the warning dialog
+  3. If still blocked, use Method 1
+
+  > **Note**: This security warning appears because the app is not notarized by Apple. The app is safe to use.
 
 ### Windows
 
-**Download:** `Oji Setup x.x.x.exe`
+- **Download:** `Oji Setup x.x.x.exe`
 
-**Installation steps:**
-1. Download the `.exe` installer
-2. Right-click and "Run as administrator" (if needed)
-3. Follow the installation wizard
-4. Choose installation directory (optional)
-5. Create desktop and start menu shortcuts
-6. Launch from Start Menu or desktop shortcut
+- **Installation steps:**
 
-**Features:**
-- Full Windows integration
-- Automatic updates
-- Proper uninstall support
-- System notifications
+  1. Download the `.exe` installer
+  2. Right-click and "Run as administrator" (if needed)
+  3. Follow the installation wizard
+  4. Choose installation directory (optional)
+  5. Create desktop and start menu shortcuts
+  6. Launch from Start Menu or desktop shortcut
+
+- **Features:**
+
+  - Full Windows integration
+  - Automatic updates
+  - Proper uninstall support
+  - System notifications
 
 ### Linux
 
 Choose the appropriate package for your distribution:
 
 #### AppImage (Universal Linux - Recommended)
+
 **Download:** `Oji-x.x.x.AppImage`
 
 ```bash
@@ -126,6 +132,7 @@ sudo mv Oji-x.x.x.AppImage /usr/local/bin/oji
 ```
 
 #### Debian/Ubuntu (.deb)
+
 **Download:** `oji_x.x.x_amd64.deb`
 
 ```bash
@@ -141,6 +148,7 @@ oji
 ```
 
 #### Red Hat/Fedora (.rpm)
+
 **Download:** `oji-x.x.x.x86_64.rpm`
 
 ```bash
@@ -160,6 +168,7 @@ oji
 ## 🌐 Web Version
 
 ### Online Version (Recommended)
+
 Access directly at: **[https://apepkuss.github.io/Oji-Assistant](https://apepkuss.github.io/Oji-Assistant)**
 
 - No installation required
@@ -168,9 +177,11 @@ Access directly at: **[https://apepkuss.github.io/Oji-Assistant](https://apepkus
 - Identical functionality to desktop versions
 
 ### Self-Hosted Version
+
 **Download:** `oji-web-vx.x.x.zip`
 
 #### Quick Local Setup
+
 ```bash
 # Extract files
 unzip oji-web-vx.x.x.zip -d oji-web
@@ -186,37 +197,41 @@ npx serve . -p 8080
 
 #### Production Deployment
 
-**Option 1: Static Web Server**
-```bash
-# Extract to web server directory
-unzip oji-web-vx.x.x.zip -d /var/www/html/oji
+- **Option 1: Static Web Server**
 
-# Configure nginx/apache to serve the directory
-# Access via your domain: https://yourdomain.com/oji/
-```
+  ```bash
+  # Extract to web server directory
+  unzip oji-web-vx.x.x.zip -d /var/www/html/oji
 
-**Option 2: Docker**
-```bash
-# Extract files
-unzip oji-web-vx.x.x.zip -d oji-web
+  # Configure nginx/apache to serve the directory
+  # Access via your domain: https://yourdomain.com/oji/
+  ```
 
-# Run with Docker
-docker run -d \
-  --name oji-web \
-  -p 8080:80 \
-  -v $(pwd)/oji-web:/usr/share/nginx/html \
-  nginx
+- **Option 2: Docker**
 
-# Access at http://localhost:8080
-```
+  ```bash
+  # Extract files
+  unzip oji-web-vx.x.x.zip -d oji-web
 
-**Option 3: Cloud Platforms**
-- **Netlify**: Drag and drop the `oji-web` folder
-- **Vercel**: Upload and deploy via CLI or dashboard
-- **GitHub Pages**: Push to a repository and enable Pages
-- **Firebase**: Use `firebase deploy` with hosting setup
+  # Run with Docker
+  docker run -d \
+    --name oji-web \
+    -p 8080:80 \
+    -v $(pwd)/oji-web:/usr/share/nginx/html \
+    nginx
+
+  # Access at http://localhost:8080
+  ```
+
+- **Option 3: Cloud Platforms**
+
+  - **Netlify**: Drag and drop the `oji-web` folder
+  - **Vercel**: Upload and deploy via CLI or dashboard
+  - **GitHub Pages**: Push to a repository and enable Pages
+  - **Firebase**: Use `firebase deploy` with hosting setup
 
 #### When to Use Self-Hosted Web Version
+
 - ✅ Internal company deployment
 - ✅ Offline/air-gapped environments
 - ✅ Custom domain requirements
@@ -227,12 +242,14 @@ docker run -d \
 ## 🔄 Auto-Update System
 
 ### How It Works
+
 - Desktop versions automatically check for updates
 - Configuration files (`latest*.yml`) contain update information
 - Users are notified when updates are available
 - Updates download and install automatically (with user consent)
 
 ### Auto-Update Files
+
 - `latest.yml` - Windows update configuration
 - `latest-mac.yml` - macOS update configuration
 - `latest-linux.yml` - Linux update configuration
@@ -240,7 +257,9 @@ docker run -d \
 > **Note**: These files are automatically downloaded by the applications. Users don't need to download them manually.
 
 ### Disabling Auto-Updates
+
 If you prefer manual updates:
+
 1. Check application preferences/settings
 2. Look for "Auto-update" or "Check for updates" option
 3. Disable the setting
@@ -248,6 +267,7 @@ If you prefer manual updates:
 ## 🆚 Choosing the Right Version
 
 ### For End Users
+
 | Use Case | Recommended Download |
 |----------|---------------------|
 | **macOS daily use** | `Oji-x.x.x.dmg` or `Oji-x.x.x-arm64.dmg` |
@@ -257,6 +277,7 @@ If you prefer manual updates:
 | **Company deployment** | `oji-web-vx.x.x.zip` |
 
 ### For Developers/IT
+
 | Use Case | Recommended Download |
 |----------|---------------------|
 | **Development testing** | AppImage (no system changes) |
@@ -269,23 +290,28 @@ If you prefer manual updates:
 ### Common Issues
 
 #### macOS: "App is damaged" error
+
 See the detailed macOS installation steps above.
 
 #### Windows: "Windows protected your PC"
+
 1. Click "More info"
 2. Click "Run anyway"
 3. Or right-click installer → Properties → Unblock
 
 #### Linux: Permission denied
+
 ```bash
 chmod +x Oji-x.x.x.AppImage
 ```
 
 #### Web version: CORS errors
+
 - Use a proper web server (not file:// protocol)
 - Configure server headers if needed
 
 ### Getting Help
+
 - 📝 Check the [Issues page](https://github.com/apepkuss/Oji-Assistant/issues)
 - 💬 Start a [Discussion](https://github.com/apepkuss/Oji-Assistant/discussions)
 - 📧 Contact the maintainer
@@ -300,4 +326,4 @@ chmod +x Oji-x.x.x.AppImage
 
 ---
 
-**Need help?** Open an issue on [GitHub](https://github.com/apepkuss/Oji-Assistant/issues) or check our [documentation](README.md).
+**Need help?** Open an issue on [GitHub](https://github.com/apepkuss/Oji-Assistant/issues) or check our [documentation](../README.md).

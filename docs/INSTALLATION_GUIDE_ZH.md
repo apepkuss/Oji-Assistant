@@ -54,60 +54,61 @@
 
 ### macOS
 
-**选择正确的版本：**
+- **选择正确的版本：**
 
-- **Intel Mac**：下载 `Oji-x.x.x.dmg`
-- **Apple Silicon (M1/M2)**：下载 `Oji-x.x.x-arm64.dmg`
+  - **Intel Mac**：下载 `Oji-x.x.x.dmg`
+  - **Apple Silicon (M1/M2)**：下载 `Oji-x.x.x-arm64.dmg`
 
-**安装步骤：**
+- **安装步骤：**
 
-1. 下载相应的 `.dmg` 文件
-2. 双击挂载磁盘镜像
-3. 将 `Oji.app` 拖拽到应用程序文件夹
-4. 从应用程序或启动台启动
+  1. 下载相应的 `.dmg` 文件
+  2. 双击挂载磁盘镜像
+  3. 将 `Oji.app` 拖拽到应用程序文件夹
+  4. 从应用程序或启动台启动
 
 **⚠️ 重要 - Gatekeeper 安全警告：**
 
 如果您看到"Oji 已损坏且无法打开"错误：
 
-**方法1：终端命令（推荐）**
+- **方法1：终端命令（推荐）**
 
-```bash
-sudo xattr -rd com.apple.quarantine /Applications/Oji.app
-```
+  ```bash
+  sudo xattr -rd com.apple.quarantine /Applications/Oji.app
+  ```
 
-**方法2：系统设置**
+- **方法2：系统设置**
 
-1. 前往系统设置 → 隐私与安全性
-2. 查找被阻止的应用程序通知
-3. 点击"仍要打开"
+  1. 前往系统设置 → 隐私与安全性
+  2. 查找被阻止的应用程序通知
+  3. 点击"仍要打开"
 
-**方法3：右键点击方法**
+- **方法3：右键点击方法**
 
-1. 右键点击 `Oji.app` → "打开"（不要双击）
-2. 在警告对话框中点击"打开"
-3. 如果仍被阻止，请使用方法1
+  1. 右键点击 `Oji.app` → "打开"（不要双击）
+  2. 在警告对话框中点击"打开"
+  3. 如果仍被阻止，请使用方法1
 
-> **注意**：出现此安全警告是因为应用程序未经过 Apple 公证。该应用程序使用安全。
+  > **注意**：出现此安全警告是因为应用程序未经过 Apple 公证。该应用程序使用安全。
 
 ### Windows
 
-**下载：** `Oji Setup x.x.x.exe`
+- **下载：** `Oji Setup x.x.x.exe`
 
-**安装步骤：**
+- **安装步骤：**
 
-1. 下载 `.exe` 安装程序
-2. 右键点击并"以管理员身份运行"（如需要）
-3. 按照安装向导操作
-4. 选择安装目录（可选）
-5. 创建桌面和开始菜单快捷方式
-6. 从开始菜单或桌面快捷方式启动
+  1. 下载 `.exe` 安装程序
+  2. 右键点击并"以管理员身份运行"（如需要）
+  3. 按照安装向导操作
+  4. 选择安装目录（可选）
+  5. 创建桌面和开始菜单快捷方式
+  6. 从开始菜单或桌面快捷方式启动
 
-**功能特色：**
-- 完整的 Windows 集成
-- 自动更新
-- 适当的卸载支持
-- 系统通知
+- **功能特色：**
+
+  - 完整的 Windows 集成
+  - 自动更新
+  - 适当的卸载支持
+  - 系统通知
 
 ### Linux
 
@@ -194,38 +195,38 @@ npx serve . -p 8080
 
 #### 生产环境部署
 
-**选项1：静态网络服务器**
+- **选项1：静态网络服务器**
 
-```bash
-# 解压到网络服务器目录
-unzip oji-web-vx.x.x.zip -d /var/www/html/oji
+  ```bash
+  # 解压到网络服务器目录
+  unzip oji-web-vx.x.x.zip -d /var/www/html/oji
 
-# 配置 nginx/apache 提供目录服务
-# 通过您的域名访问：https://yourdomain.com/oji/
-```
+  # 配置 nginx/apache 提供目录服务
+  # 通过您的域名访问：https://yourdomain.com/oji/
+  ```
 
-**选项2：Docker**
+- **选项2：Docker**
 
-```bash
-# 解压文件
-unzip oji-web-vx.x.x.zip -d oji-web
+  ```bash
+  # 解压文件
+  unzip oji-web-vx.x.x.zip -d oji-web
 
-# 使用 Docker 运行
-docker run -d \
-  --name oji-web \
-  -p 8080:80 \
-  -v $(pwd)/oji-web:/usr/share/nginx/html \
-  nginx
+  # 使用 Docker 运行
+  docker run -d \
+    --name oji-web \
+    -p 8080:80 \
+    -v $(pwd)/oji-web:/usr/share/nginx/html \
+    nginx
 
-# 访问 http://localhost:8080
-```
+  # 访问 http://localhost:8080
+  ```
 
-**选项3：云平台**
+- **选项3：云平台**
 
-- **Netlify**：直接拖拽 `oji-web` 文件夹
-- **Vercel**：通过 CLI 或控制面板上传和部署
-- **GitHub Pages**：推送到仓库并启用 Pages
-- **Firebase**：使用 `firebase deploy` 配置托管
+  - **Netlify**：直接拖拽 `oji-web` 文件夹
+  - **Vercel**：通过 CLI 或控制面板上传和部署
+  - **GitHub Pages**：推送到仓库并启用 Pages
+  - **Firebase**：使用 `firebase deploy` 配置托管
 
 #### 何时使用自托管网页版本
 
@@ -256,6 +257,7 @@ docker run -d \
 ### 禁用自动更新
 
 如果您偏好手动更新：
+
 1. 检查应用程序偏好设置/设置
 2. 查找"自动更新"或"检查更新"选项
 3. 禁用该设置
@@ -322,4 +324,4 @@ chmod +x Oji-x.x.x.AppImage
 
 ---
 
-**需要帮助？** 在 [GitHub](https://github.com/apepkuss/Oji-Assistant/issues) 上提出问题或查看我们的 [文档](README.md)。
+**需要帮助？** 在 [GitHub](https://github.com/apepkuss/Oji-Assistant/issues) 上提出问题或查看我们的 [文档](../README.md)。
