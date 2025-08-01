@@ -135,7 +135,7 @@ See [WEB_DEPLOYMENT.md](./docs/WEB_DEPLOYMENT.md) | [网页部署指南](./docs/
 
 ### Desktop Distribution
 
-See [ELECTRON_SETUP.md](./docs/ELECTRON_SETUP.md) for detailed Electron app setup and distribution.
+See [ELECTRON_SETUP.md](./docs/ELECTRON_SETUP.md) | [Electron 配置指南](./docs/ELECTRON_SETUP_ZH.md) for detailed Electron app setup and distribution.
 
 GitHub Actions automatically builds and releases desktop apps when you create a version tag:
 

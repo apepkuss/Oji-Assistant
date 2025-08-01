@@ -1,125 +1,125 @@
-# Electron 应用发布说明
+# Electron Application Release Documentation
 
-## 📋 自动化发布流程
+## 📋 Automated Release Process
 
-本项目已配置完整的跨平台自动化构建和发布流程，支持 macOS、Windows 和 Linux 平台。
+This project has configured a complete cross-platform automated build and release process, supporting macOS, Windows, and Linux platforms.
 
-## 🚀 如何发布新版本
+## 🚀 How to Release New Versions
 
-### 方法 1: Git Tag 发布 (推荐)
+### Method 1: Git Tag Release (Recommended)
 
-1. **更新版本号**
+1. **Update Version Number**
 
    ```bash
-   npm version patch  # 小版本更新 (1.0.0 -> 1.0.1)
-   npm version minor  # 功能更新 (1.0.0 -> 1.1.0)
-   npm version major  # 大版本更新 (1.0.0 -> 2.0.0)
+   npm version patch  # Patch version update (1.0.0 -> 1.0.1)
+   npm version minor  # Feature update (1.0.0 -> 1.1.0)
+   npm version major  # Major version update (1.0.0 -> 2.0.0)
    ```
 
-2. **推送标签到GitHub**
+2. **Push Tag to GitHub**
 
    ```bash
    git push origin main --tags
    ```
 
-3. **自动构建和发布**
-   - GitHub Actions 会自动检测到新标签
-   - 自动在三个平台上构建应用
-   - 创建GitHub Release并上传安装包
+3. **Automatic Build and Release**
+   - GitHub Actions will automatically detect the new tag
+   - Automatically build applications on three platforms
+   - Create GitHub Release and upload installation packages
 
-### 方法 2: 手动触发发布
+### Method 2: Manual Triggered Release
 
-1. 前往 GitHub 仓库的 "Actions" 页面
-2. 选择 "Build and Release Electron App" 工作流
-3. 点击 "Run workflow"
-4. 等待构建完成
+1. Go to the GitHub repository's "Actions" page
+2. Select "Build and Release Electron App" workflow
+3. Click "Run workflow"
+4. Wait for build completion
 
-## 📦 构建产物
+## 📦 Build Artifacts
 
 ### macOS
 
-- `.dmg` - 磁盘镜像安装包
-- `.zip` - 压缩包版本
-- 支持 Intel (x64) 和 Apple Silicon (arm64)
+- `.dmg` - Disk image installer
+- `.zip` - Compressed package version
+- Supports Intel (x64) and Apple Silicon (arm64)
 
 ### Windows
 
-- `.exe` - NSIS 安装程序
-- `.exe` (portable) - 便携版本
-- 支持 64位 和 32位
+- `.exe` - NSIS installer
+- `.exe` (portable) - Portable version
+- Supports 64-bit and 32-bit
 
 ### Linux
 
-- `.AppImage` - 便携应用包
-- `.deb` - Debian/Ubuntu 安装包
-- `.rpm` - Red Hat/Fedora 安装包
+- `.AppImage` - Portable application package
+- `.deb` - Debian/Ubuntu installation package
+- `.rpm` - Red Hat/Fedora installation package
 
-### Web 版本
+### Web Version
 
-- **GitHub Pages**: 自动部署到 `https://apepkuss.github.io/Oji-Assistant`
-- **压缩包**: `oji-web-{version}.zip` 用于本地部署
+- **GitHub Pages**: Automatically deployed to `https://apepkuss.github.io/Oji-Assistant`
+- **Archive**: `oji-web-{version}.zip` for local deployment
 
-## 🛠️ 本地开发
+## 🛠️ Local Development
 
-### 启动开发环境
+### Start Development Environment
 
 ```bash
-# 方法 1: 使用脚本
+# Method 1: Using scripts
 ./scripts/dev.sh
 
-# 方法 2: 使用npm命令
+# Method 2: Using npm commands
 npm run electron:dev
 ```
 
-### 本地构建测试
+### Local Build Testing
 
 ```bash
-# 构建所有平台 (需要对应平台环境)
+# Build all platforms (requires corresponding platform environments)
 ./scripts/build.sh
 
-# 构建当前平台
+# Build current platform
 npm run electron:dist
 
-# 构建特定平台
+# Build specific platforms
 npm run build:mac     # macOS
 npm run build:win     # Windows
 npm run build:linux   # Linux
 ```
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```txt
 oji-assistant/
-├── electron/           # Electron 主进程和预加载脚本
-│   ├── main.js        # Electron 主进程
-│   └── preload.js     # 预加载脚本
-├── src/               # React 应用源码
-├── scripts/           # 构建脚本
-├── .github/workflows/ # GitHub Actions 工作流
-├── build/             # 应用图标和资源
-├── public/            # 公共资源文件
-└── release/           # 构建输出目录
+├── electron/           # Electron main process and preload scripts
+│   ├── main.js        # Electron main process
+│   └── preload.js     # Preload script
+├── src/               # React application source code
+├── scripts/           # Build scripts
+├── .github/workflows/ # GitHub Actions workflows
+├── build/             # Application icons and resources
+├── public/            # Public resource files
+└── release/           # Build output directory
 ```
 
-## 🔧 配置说明
+## 🔧 Configuration Description
 
-### Electron Builder 配置
+### Electron Builder Configuration
 
-在 `package.json` 中的 `build` 字段配置了：
+The `build` field in `package.json` configures:
 
-- 应用ID、名称和图标
-- 各平台的构建目标和格式
-- 代码签名配置 (可选)
-- 自动更新配置 (可选)
+- Application ID, name, and icon
+- Build targets and formats for each platform
+- Code signing configuration (optional)
+- Auto-update configuration (optional)
 
-### GitHub Actions 配置
+### GitHub Actions Configuration
 
-- `.github/workflows/build-release.yml` - 发布工作流 (支持桌面端和Web端)
-- `.github/workflows/dev-build.yml` - 开发构建工作流
+- `.github/workflows/build-release.yml` - Release workflow (supports desktop and web)
+- `.github/workflows/dev-build.yml` - Development build workflow
 
-## 🎨 图标配置
+## 🎨 Icon Configuration
 
-**重要**: 在首次发布前，需要在 `build/` 目录中添加应用图标：
+**Important**: Before first release, you need to add application icons in the `build/` directory:
 
 ```bash
 build/
@@ -128,13 +128,13 @@ build/
 └── icon.png     # Linux (512x512px)
 ```
 
-可以使用在线工具如 [ConvertICO](https://convertico.com/) 或 [RealFaviconGenerator](https://realfavicongenerator.net/) 生成多种格式的图标。
+You can use online tools like [ConvertICO](https://convertico.com/) or [RealFaviconGenerator](https://realfavicongenerator.net/) to generate icons in multiple formats.
 
-## 🔒 代码签名 (可选)
+## 🔒 Code Signing (Optional)
 
-为了在 macOS 和 Windows 上避免安全警告，建议配置代码签名：
+To avoid security warnings on macOS and Windows, it's recommended to configure code signing:
 
-### macOS 代码签名
+### macOS Code Signing
 
 ```json
 "mac": {
@@ -144,7 +144,7 @@ build/
 }
 ```
 
-### Windows 代码签名
+### Windows Code Signing
 
 ```json
 "win": {
@@ -153,51 +153,51 @@ build/
 }
 ```
 
-## 🔄 自动更新 (可选)
+## 🔄 Auto-Update (Optional)
 
-可以集成 `electron-updater` 实现自动更新功能：
+You can integrate `electron-updater` to implement auto-update functionality:
 
 ```bash
 npm install electron-updater
 ```
 
-## 📝 注意事项
+## 📝 Notes
 
-1. **⚠️ 图标配置**: 当前 `build/` 目录中缺少应用图标文件，需要添加：
+1. **⚠️ Icon Configuration**: Currently missing application icon files in the `build/` directory, need to add:
    - `icon.icns` (macOS, 1024x1024px)
    - `icon.ico` (Windows, 256x256px)
    - `icon.png` (Linux, 512x512px)
-2. **macOS 构建**需要在 macOS 环境中进行（GitHub Actions 已配置）
-3. **Windows 构建**可以在任何平台进行
-4. **Linux 构建**建议在 Linux 环境中进行以确保兼容性
-5. **代码签名**需要有效的开发者证书
-6. **发布权限**需要仓库的 write 权限
-7. **Web 版本**会自动部署到 GitHub Pages，可通过链接访问
+2. **macOS builds** need to be performed in macOS environment (GitHub Actions configured)
+3. **Windows builds** can be performed on any platform
+4. **Linux builds** are recommended to be performed in Linux environment for compatibility
+5. **Code signing** requires valid developer certificates
+6. **Release permissions** require repository write permissions
+7. **Web version** will be automatically deployed to GitHub Pages, accessible via link
 
-## 🐛 故障排除
+## 🐛 Troubleshooting
 
-### 构建失败
+### Build Failures
 
-1. 检查 `package.json` 中的依赖版本
-2. 确保 Node.js 版本兼容 (推荐 18.x)
-3. 检查 GitHub Actions 日志中的错误信息
+1. Check dependency versions in `package.json`
+2. Ensure Node.js version compatibility (recommended 18.x)
+3. Check error information in GitHub Actions logs
 
-### 应用无法启动
+### Application Won't Start
 
-1. 检查 `electron/main.js` 中的路径配置
-2. 确认 React 应用构建成功
-3. 检查控制台错误信息
+1. Check path configuration in `electron/main.js`
+2. Confirm React application build success
+3. Check console error messages
 
-### 无法连接到AI服务
+### Cannot Connect to AI Service
 
-1. 确认AI服务正在运行（默认端口9068）
-2. 检查设置中的Base URL是否正确
-3. 确认网络连接正常
-4. 尝试在浏览器中访问 `http://localhost:9068/v1` 确认服务可达
-5. 检查防火墙设置是否阻止了连接
+1. Confirm AI service is running (default port 9068)
+2. Check if Base URL in settings is correct
+3. Confirm network connection is normal
+4. Try accessing `http://localhost:9068/v1` in browser to confirm service is reachable
+5. Check firewall settings for blocked connections
 
-### 图标未显示
+### Icons Not Displaying
 
-1. 确认图标文件存在且格式正确
-2. 检查 `package.json` 中的图标路径配置
-3. 重新构建应用
+1. Confirm icon files exist and are in correct format
+2. Check icon path configuration in `package.json`
+3. Rebuild the application
