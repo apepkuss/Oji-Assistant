@@ -32,8 +32,15 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install dependencies (Windows/macOS)
+        if: matrix.os != 'ubuntu-latest'
         run: npm ci
+
+      - name: Install dependencies (Linux - workaround for rollup issue)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          npm cache clean --force
+          npm install --legacy-peer-deps
 
       - name: Run linting
         run: npm run lint
