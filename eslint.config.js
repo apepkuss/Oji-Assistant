@@ -23,7 +23,19 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-unused-vars': ['error', {
+        varsIgnorePattern: '^[A-Z_]|^_',
+        argsIgnorePattern: '^_'
+      }],
+    },
+  },
+  {
+    files: ['electron/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.electron,
+      },
     },
   },
 ])

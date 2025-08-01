@@ -168,7 +168,7 @@ function AppContent() {
   const [renameValue, setRenameValue] = useState("");
   const [deletingChat, setDeletingChat] = useState(null);
   const [showChats, setShowChats] = useState(true);
-  const { colorMode, toggleColorMode, setColorMode } = useColorMode();
+  const { colorMode, toggleColorMode: TOGGLE_COLOR_MODE, setColorMode } = useColorMode();
   const { isOpen: isSidebarOpen, onToggle: toggleSidebar } = useDisclosure();
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
   const { isOpen: isSystemPromptOpen, onOpen: onSystemPromptOpen, onClose: onSystemPromptClose } = useDisclosure();
@@ -264,7 +264,7 @@ function AppContent() {
     }
   };
 
-  const renameChat = (chatId, newName) => {
+  const RENAME_CHAT = (chatId, newName) => {
     updateChatName(chatId, newName);
   };
 
@@ -345,7 +345,7 @@ function AppContent() {
       const clipboardData = e.clipboardData || window.clipboardData;
       const pastedData = clipboardData.getData('text');
       setTempBaseUrl(pastedData);
-    } catch (err) {
+    } catch {
       console.log('Paste fallback');
       // 如果上面的方法失败，让浏览器处理默认粘贴
       return true;
@@ -359,7 +359,7 @@ function AppContent() {
       const clipboardData = e.clipboardData || window.clipboardData;
       const pastedData = clipboardData.getData('text');
       setTempApiKey(pastedData);
-    } catch (err) {
+    } catch {
       console.log('Paste fallback');
       // 如果上面的方法失败，让浏览器处理默认粘贴
       return true;
@@ -463,7 +463,7 @@ function AppContent() {
         setColorMode("dark");
         break;
       case "Auto":
-      default:
+      default: {
         // Auto 模式根据系统偏好设置
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         setColorMode(mediaQuery.matches ? 'dark' : 'light');
@@ -477,6 +477,7 @@ function AppContent() {
         mediaQuery.addEventListener('change', handleChange);
 
         return () => mediaQuery.removeEventListener('change', handleChange);
+      }
     }
   }, [colorTheme, setColorMode]);
 
@@ -610,7 +611,7 @@ function AppContent() {
                         return newMsgs;
                       });
                     }
-                  } catch (e) {
+                  } catch {
                     // Skip invalid JSON lines
                     console.warn('Failed to parse SSE data:', data);
                   }
