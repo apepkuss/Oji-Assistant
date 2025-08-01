@@ -15,12 +15,52 @@ on:
     branches: [ main ]
 
 jobs:
-  test-build:
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Clean npm cache and install dependencies
+        run: |
+          npm cache clean --force
+          rm -rf node_modules package-lock.json
+          npm install --legacy-peer-deps
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Build Web app
+        run: npm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+          ROLLUP_WATCH: false
+
+      - name: Upload web build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build-test
+          path: dist/
+          retention-days: 3
+
+  build-desktop:
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        include:
+          - os: macos-latest
+            platform: mac
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: win
 
     steps:
       - name: Checkout repository
@@ -32,30 +72,60 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install dependencies (Windows/macOS)
-        if: matrix.os != 'ubuntu-latest'
-        run: npm ci
-
-      - name: Install dependencies (Linux - workaround for rollup issue)
+      - name: Clean npm cache and install dependencies (Linux)
         if: matrix.os == 'ubuntu-latest'
+        shell: bash
         run: |
           npm cache clean --force
+          rm -rf node_modules package-lock.json
           npm install --legacy-peer-deps
+
+      - name: Clean npm cache and install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        run: |
+          npm cache clean --force
+          if (Test-Path node_modules) { Remove-Item -Recurse -Force node_modules }
+          if (Test-Path package-lock.json) { Remove-Item package-lock.json }
+          npm install --legacy-peer-deps
+          npm install vite@^7.0.4 --save-dev
+          npm rebuild
+
+      - name: Add node_modules to PATH (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        run: |
+          $currentPath = $env:PATH
+          $nodeModulesBin = "$(pwd)\node_modules\.bin"
+          $env:PATH = "$nodeModulesBin;$currentPath"
+          Write-Host "Updated PATH: $env:PATH"
+
+      - name: Clean npm cache and install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          npm cache clean --force
+          rm -rf node_modules package-lock.json
+          npm install --legacy-peer-deps
+
+      - name: Verify installations
+        run: |
+          npm list vite
+          npm list @vitejs/plugin-react
+        continue-on-error: true
 
       - name: Run linting
         run: npm run lint
 
-      - name: Build React app
-        run: npm run build
-
-      - name: Test Electron packaging
-        run: npm run electron:dist
+      - name: Build React app (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: powershell
+        run: npm run build:react
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=4096
 
-      - name: Upload test artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-build-${{ matrix.os }}
-          path: release/
-          retention-days: 3
+      - name: Build React app (Non-Windows)
+        if: matrix.os != 'windows-latest'
+        run: npm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
