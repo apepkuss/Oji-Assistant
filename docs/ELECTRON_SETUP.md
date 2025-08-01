@@ -1,3 +1,7 @@
+<div align = "right">
+<a href="INSTALLATION_GUIDE_ZH.md">简体中文</a>
+</div>
+
 # Electron Application Release Documentation
 
 ## 📋 Automated Release Process
