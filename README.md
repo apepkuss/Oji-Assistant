@@ -2,29 +2,37 @@
 
 A modern, cross-platform AI chat application built with React and Chakra UI. Oji provides an intuitive interface for AI conversations with support for both streaming and non-streaming responses.
 
-## 🚀 Available Versions
+## 🚀 Installation
 
 ### 🖥️ Desktop App (Electron)
 
-- **macOS**: Native app with system integration
+Oji is available as native desktop applications for all major platforms:
+
+- **macOS**: Native app with system integration (Intel and Apple Silicon)
 - **Windows**: Native app with installer
 - **Linux**: AppImage, DEB, and RPM packages
 
-### 🌐 Web App (Progressive Web App)
+**📖 For detailed installation instructions, see:** [Desktop Installation Guide](INSTALLATION_GUIDE.md) | [桌面安装指南](INSTALLATION_GUIDE_ZH.md)
 
-- **Browser Access**: Works in any modern web browser
-- **PWA Support**: Can be installed as a desktop app
+### 🌐 Web App
+
+Access Oji directly in your browser or deploy your own instance:
+
+- **Online Version**: [https://apepkuss.github.io/Oji-Assistant](https://apepkuss.github.io/Oji-Assistant)
+- **Self-Hosted**: Download and deploy the web version on your own server
+- **PWA Support**: Can be installed as a desktop app from your browser
 - **Mobile Friendly**: Responsive design for mobile devices
-- **Offline Capable**: Basic functionality works offline
 
-## Prerequisites
+**📖 For detailed web installation and deployment instructions, see:** [Web Installation Guide](INSTALLATION_GUIDE.md#-web-version) | [网页版安装指南](INSTALLATION_GUIDE_ZH.md#-网页版本)
+
+## 🔨 Build from Source
+
+### Prerequisites
 
 - Node.js 18+
 - npm or yarn
 
-## Getting Started
-
-### 🖥️ Desktop Development
+### Development Setup
 
 #### 1. Clone the repository
 
@@ -39,15 +47,9 @@ cd Oji-Assistant
 npm install
 ```
 
-### 3. Build the application
+#### 3. Development Mode
 
-```bash
-npm run build
-```
-
-### 4. Run the application
-
-For development:
+For web development:
 
 ```bash
 npm run dev
@@ -55,34 +57,9 @@ npm run dev
 
 The development server will start at `http://localhost:5173`
 
-### 🌐 Web Development
+### Production Builds
 
-#### 1. Build Web version
-
-```bash
-npm run build:web
-```
-
-#### 2. Preview Web version
-
-```bash
-npm run preview:web
-```
-
-The web app will be available at `http://localhost:4173/`
-
-#### 3. Deploy with Docker
-
-```bash
-# Build and run with Docker Compose
-docker-compose up -d
-
-# Access at http://localhost:8080
-```
-
-## 📦 Production Builds
-
-### Desktop Apps
+#### Desktop Apps
 
 ```bash
 # Build for all platforms
@@ -94,14 +71,25 @@ npm run build:win      # Windows
 npm run build:linux    # Linux
 ```
 
-### Web App
+#### Web App
 
 ```bash
 # Build web version
 npm run build:web
 
-# Files will be in dist/ directory
-# Deploy dist/ contents to any web server
+# Preview web build locally
+npm run preview:web
+```
+
+The web app will be available at `http://localhost:4173/`
+
+#### Docker Deployment
+
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+
+# Access at http://localhost:8080
 ```
 
 ## 🔧 Configuration
@@ -116,7 +104,7 @@ npm run build:web
 
 ```bash
 # Default AI service URL (for web builds)
-VITE_DEFAULT_AI_SERVICE_BASE_URL=http://your-ai-server:9068/v1
+VITE_DEFAULT_AI_SERVICE_BASE_URL=http://{host}:{port}/v1
 
 # App version
 VITE_APP_VERSION=1.0.0
@@ -126,10 +114,10 @@ These environment variables can be set during build time:
 
 ```bash
 # Build with custom AI service URL
-VITE_DEFAULT_AI_SERVICE_BASE_URL=http://your-ai-server:9068/v1 npm run build:web
+VITE_DEFAULT_AI_SERVICE_BASE_URL=http://{host}:{port}/v1 npm run build:web
 
 # Or create a .env file
-echo "VITE_DEFAULT_AI_SERVICE_BASE_URL=http://your-ai-server:9068/v1" > .env
+echo "VITE_DEFAULT_AI_SERVICE_BASE_URL=http://{host}:{port}/v1" > .env
 npm run build:web
 ```
 
