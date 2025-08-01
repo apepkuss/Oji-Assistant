@@ -2,7 +2,15 @@ name: Development Build
 
 on:
   push:
-    branches: [ main, develop ]
+    branches:
+      - dev
+      - main
+      - release-*
+      - feat-*
+      - ci-*
+      - refactor-*
+      - fix-*
+      - test-*
   pull_request:
     branches: [ main ]
 
