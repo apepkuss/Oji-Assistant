@@ -14,7 +14,7 @@ function getCliConfig() {
 const cliConfig = getCliConfig()
 
 // https://vite.dev/config/
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ command: _command, mode: _mode }) => {
   // 传递环境变量到前端应用
   const envDefines = {
     'import.meta.env.VITE_RUNTIME_AI_SERVICE_BASE_URL': JSON.stringify(cliConfig.baseUrl),
