@@ -6,6 +6,51 @@
 
 Oji now supports deployment as a web application, allowing users to access the complete AI assistant functionality through their browser.
 
+- [Oji Web Version Deployment Guide](#oji-web-version-deployment-guide)
+  - [🌐 Deployment Methods](#-deployment-methods)
+    - [1. GitHub Pages Automatic Deployment](#1-github-pages-automatic-deployment)
+    - [2. Manual Deployment](#2-manual-deployment)
+      - [Build Web Version](#build-web-version)
+      - [Deploy to Any Web Server](#deploy-to-any-web-server)
+    - [3. Docker Deployment](#3-docker-deployment)
+      - [Using Docker Compose (Recommended)](#using-docker-compose-recommended)
+      - [Using Docker Commands](#using-docker-commands)
+    - [4. Static File Server Deployment](#4-static-file-server-deployment)
+      - [Using Python](#using-python)
+      - [Using Node.js serve](#using-nodejs-serve)
+      - [Using nginx](#using-nginx)
+  - [⚙️ Configuration](#️-configuration)
+    - [AI Service Configuration](#ai-service-configuration)
+    - [Cross-Origin Configuration](#cross-origin-configuration)
+      - [Express.js Example](#expressjs-example)
+      - [Axum (Rust) Example](#axum-rust-example)
+      - [🔍 Verify CORS Configuration](#-verify-cors-configuration)
+        - [Method 1: Using Web Test Page](#method-1-using-web-test-page)
+        - [Method 2: Using Command Line Scripts](#method-2-using-command-line-scripts)
+  - [🔧 Environment Variables](#-environment-variables)
+    - [Build-time Environment Variables](#build-time-environment-variables)
+    - [Runtime Environment Variables](#runtime-environment-variables)
+    - [Environment Variables in Docker Deployment](#environment-variables-in-docker-deployment)
+    - [Using .env Files](#using-env-files)
+    - [Priority Order](#priority-order)
+    - [CI/CD Integration Example](#cicd-integration-example)
+  - [📱 PWA Support](#-pwa-support)
+  - [🛡️ Security Considerations](#️-security-considerations)
+    - [HTTPS Deployment](#https-deployment)
+    - [Environment Isolation](#environment-isolation)
+  - [🚀 Performance Optimization](#-performance-optimization)
+    - [Enable Gzip Compression](#enable-gzip-compression)
+    - [CDN Deployment](#cdn-deployment)
+  - [📊 Monitoring](#-monitoring)
+    - [Logging](#logging)
+    - [Analytics](#analytics)
+  - [🔄 Update Deployment](#-update-deployment)
+    - [Automatic Updates](#automatic-updates)
+    - [Manual Updates](#manual-updates)
+  - [🆘 Troubleshooting](#-troubleshooting)
+    - [Common Issues](#common-issues)
+    - [Debug Mode](#debug-mode)
+
 ## 🌐 Deployment Methods
 
 ### 1. GitHub Pages Automatic Deployment
@@ -162,7 +207,11 @@ Testing will verify:
 
 ## 🔧 Environment Variables
 
-Oji Web version supports configuring default settings through environment variables. Set these variables during build time:
+Oji Web version supports two types of environment variable configuration:
+
+### Build-time Environment Variables
+
+Setting these variables during build time will embed the configuration into the application:
 
 ```bash
 # Configure default AI service URL
@@ -175,22 +224,104 @@ VITE_APP_VERSION=1.0.0 npm run build:web
 VITE_DEFAULT_AI_SERVICE_BASE_URL=http://your-ai-server:9068/v1 VITE_APP_VERSION=1.0.0 npm run build:web
 ```
 
-**Supported environment variables**:
+**Supported build-time environment variables**:
 
 - `VITE_DEFAULT_AI_SERVICE_BASE_URL`: Set default AI service endpoint URL
 - `VITE_APP_VERSION`: Set application version (usually set automatically in CI/CD)
+
+### Runtime Environment Variables
+
+Runtime environment variables allow dynamic configuration when starting the application, with higher priority than build-time settings:
+
+```bash
+# Development mode with custom AI service
+AI_BASE_URL=http://your-ai-server:9068/v1 AI_API_KEY=your-api-key npm run dev
+
+# Build with custom configuration
+AI_BASE_URL=http://your-ai-server:9068/v1 AI_API_KEY=your-api-key npm run build:web
+
+# Preview with custom configuration
+AI_BASE_URL=http://your-ai-server:9068/v1 AI_API_KEY=your-api-key npm run preview:web
+```
+
+**Supported runtime environment variables**:
+
+- `AI_BASE_URL`: Set default AI service base URL
+- `AI_API_KEY`: Set default API key
+
+### Environment Variables in Docker Deployment
+
+Using environment variables in Docker environment:
+
+```bash
+# Build with runtime environment variables
+AI_BASE_URL=https://prod-ai.company.com/v1 AI_API_KEY=prod-key docker-compose up -d
+
+# Or set in docker-compose.yml
+```
+
+```yaml
+# docker-compose.yml example
+version: '3.8'
+services:
+  oji-web:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      - AI_BASE_URL=https://prod-ai.company.com/v1
+      - AI_API_KEY=your-production-key
+```
+
+### Using .env Files
 
 **Using .env file**:
 
 ```bash
 # Create .env file
 echo "VITE_DEFAULT_AI_SERVICE_BASE_URL=http://your-ai-server:9068/v1" > .env
+echo "AI_BASE_URL=http://your-ai-server:9068/v1" >> .env
+echo "AI_API_KEY=your-api-key" >> .env
 
 # Build will automatically read .env file
 npm run build:web
 ```
 
+### Priority Order
+
+Environment variable priority (from highest to lowest):
+
+1. **Runtime environment variables** (`AI_BASE_URL`, `AI_API_KEY`) - Highest priority
+2. **Build-time environment variables** (`VITE_DEFAULT_AI_SERVICE_BASE_URL`) - Medium priority
+3. **Hardcoded default values** (`http://localhost:9068/v1`) - Lowest priority
+
+### CI/CD Integration Example
+
+```yaml
+# GitHub Actions example
+name: Deploy Oji Web
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build with production settings
+        run: |
+          AI_BASE_URL=${{ secrets.PROD_AI_SERVICE_URL }} \
+          AI_API_KEY=${{ secrets.PROD_AI_API_KEY }} \
+          npm run build:web
+        env:
+          VITE_DEFAULT_AI_SERVICE_BASE_URL: ${{ secrets.PROD_AI_SERVICE_URL }}
+```
+
 *Note: If no environment variables are set, the application will use the default value `http://localhost:9068/v1`. Users can still manually modify these configurations in the application settings.*
+
+For detailed environment variable usage instructions, please refer to: [Environment Variables Configuration Guide](./ENVIRONMENT_VARIABLES.md)
 
 ## 📱 PWA Support
 

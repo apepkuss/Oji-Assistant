@@ -144,6 +144,36 @@ function ChatBubble({ role, content, images = [] }) {
 }
 
 function AppContent() {
+  // 获取默认值的优先级：运行时环境变量 > 构建时环境变量 > 默认值
+  const getDefaultBaseUrl = () => {
+    const runtimeBaseUrl = import.meta.env.VITE_RUNTIME_AI_SERVICE_BASE_URL;
+    const defaultBaseUrl = import.meta.env.VITE_DEFAULT_AI_SERVICE_BASE_URL;
+    const fallbackUrl = "http://localhost:9068/v1";
+
+    const result = runtimeBaseUrl || defaultBaseUrl || fallbackUrl;
+
+    // 开发模式下显示调试信息
+    if (import.meta.env.DEV) {
+      console.log('Environment Variables Debug:');
+      console.log('  AI_BASE_URL (runtime):', runtimeBaseUrl || 'not set');
+      console.log('  VITE_DEFAULT_AI_SERVICE_BASE_URL (build-time):', defaultBaseUrl || 'not set');
+      console.log('  Selected Base URL:', result);
+    }
+
+    return result;
+  };
+
+  const getDefaultApiKey = () => {
+    const runtimeApiKey = import.meta.env.VITE_RUNTIME_AI_API_KEY;
+
+    // 开发模式下显示调试信息（不显示完整 API key）
+    if (import.meta.env.DEV) {
+      console.log('  AI_API_KEY (runtime):', runtimeApiKey ? `${runtimeApiKey.substring(0, 8)}...` : 'not set');
+    }
+
+    return runtimeApiKey || "";
+  };
+
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -151,10 +181,10 @@ function AppContent() {
     { id: 1, name: "New Chat", messages: [] }
   ]);
   const [activeChat, setActiveChat] = useState(1);
-  const [baseUrl, setBaseUrl] = useState(import.meta.env.VITE_DEFAULT_AI_SERVICE_BASE_URL || "http://localhost:9068/v1");
-  const [tempBaseUrl, setTempBaseUrl] = useState(import.meta.env.VITE_DEFAULT_AI_SERVICE_BASE_URL || "http://localhost:9068/v1");
-  const [apiKey, setApiKey] = useState("");
-  const [tempApiKey, setTempApiKey] = useState("");
+  const [baseUrl, setBaseUrl] = useState(getDefaultBaseUrl());
+  const [tempBaseUrl, setTempBaseUrl] = useState(getDefaultBaseUrl());
+  const [apiKey, setApiKey] = useState(getDefaultApiKey());
+  const [tempApiKey, setTempApiKey] = useState(getDefaultApiKey());
   const [showApiKey, setShowApiKey] = useState(false);
   const [useStreaming, setUseStreaming] = useState(true);
   const [tempUseStreaming, setTempUseStreaming] = useState(true);

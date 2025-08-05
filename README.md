@@ -2,6 +2,28 @@
 
 A modern, cross-platform AI chat application built with React and Chakra UI. Oji provides an intuitive interface for AI conversations with support for both streaming and non-streaming responses.
 
+- [Oji Assistant](#oji-assistant)
+  - [🚀 Installation](#-installation)
+    - [🖥️ Desktop App (Electron)](#️-desktop-app-electron)
+    - [🌐 Web App](#-web-app)
+  - [🔨 Build from Source](#-build-from-source)
+    - [Prerequisites](#prerequisites)
+    - [Development Setup](#development-setup)
+      - [1. Clone the repository](#1-clone-the-repository)
+      - [2. Install dependencies](#2-install-dependencies)
+      - [3. Development Mode](#3-development-mode)
+    - [Production Builds](#production-builds)
+      - [Desktop Apps](#desktop-apps)
+      - [Web App](#web-app)
+      - [Docker Deployment](#docker-deployment)
+  - [🔧 Configuration](#-configuration)
+    - [AI Service Setup](#ai-service-setup)
+    - [Environment Variables](#environment-variables)
+    - [Environment Variables (Web Version)](#environment-variables-web-version)
+  - [🚀 Deployment](#-deployment)
+    - [Web Deployment](#web-deployment)
+    - [Desktop Distribution](#desktop-distribution)
+
 ## 🚀 Installation
 
 ### 🖥️ Desktop App (Electron)
@@ -120,6 +142,30 @@ VITE_DEFAULT_AI_SERVICE_BASE_URL=http://{host}:{port}/v1 npm run build:web
 echo "VITE_DEFAULT_AI_SERVICE_BASE_URL=http://{host}:{port}/v1" > .env
 npm run build:web
 ```
+
+### Environment Variables (Web Version)
+
+For the web version, you can set default AI service configuration using runtime environment variables:
+
+```bash
+# Development with custom settings
+AI_BASE_URL=http://your-ai-server:9068/v1 AI_API_KEY=your-api-key npm run dev
+
+# Build with custom settings
+AI_BASE_URL=http://your-ai-server:9068/v1 AI_API_KEY=your-api-key npm run build
+
+# Preview with custom settings
+AI_BASE_URL=http://your-ai-server:9068/v1 AI_API_KEY=your-api-key npm run preview
+```
+
+**Available environment variables:**
+
+- `AI_BASE_URL` - Set the default AI service base URL
+- `AI_API_KEY` - Set the default API key
+
+These runtime environment variables will override any build-time defaults and provide the initial values in the Server Settings page.
+
+For detailed usage instructions, see [ENVIRONMENT_VARIABLES.md](./docs/ENVIRONMENT_VARIABLES.md) | [环境变量配置说明](./docs/ENVIRONMENT_VARIABLES_ZH.md).
 
 ## 🚀 Deployment
 

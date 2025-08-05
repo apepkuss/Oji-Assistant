@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oji 环境变量测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .env-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+        .env-name {
+            font-weight: bold;
+            color: #495057;
+        }
+        .env-value {
+            font-family: monospace;
+            color: #28a745;
+            margin-top: 5px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+        .success {
+            color: #28a745;
+        }
+        .warning {
+            color: #ffc107;
+        }
+        .error {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Oji 环境变量测试</h1>
+        <p>此页面显示 Oji 应用中可用的环境变量配置。</p>
+
+        <div class="test-section">
+            <h3>📋 环境变量列表</h3>
+            <div id="env-list"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 配置测试</h3>
+            <div id="config-test"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>💡 使用说明</h3>
+            <ul>
+                <li><strong>AI_BASE_URL</strong>: 运行时设置 AI 服务基础 URL</li>
+                <li><strong>AI_API_KEY</strong>: 运行时设置 API 密钥</li>
+                <li><strong>VITE_CLI_AI_SERVICE_BASE_URL</strong>: 构建时设置 AI 服务 URL</li>
+                <li><strong>VITE_CLI_AI_API_KEY</strong>: 构建时设置 API 密钥</li>
+            </ul>
+
+            <h4>测试命令：</h4>
+            <pre><code># 使用环境变量启动
+AI_BASE_URL=http://test:9068/v1 AI_API_KEY=test123 npm run dev
+
+# 或创建 .env 文件
+echo "AI_BASE_URL=http://test:9068/v1" > .env
+npm run dev</code></pre>
+        </div>
+    </div>
+
+    <script>
+        // 模拟检查环境变量（在实际 Vite 应用中会有这些值）
+        const envVars = {
+            'AI_BASE_URL': 'AI_BASE_URL 仅在运行时设置，无法在此静态页面中检查',
+            'AI_API_KEY': 'AI_API_KEY 仅在运行时设置，无法在此静态页面中检查',
+            'VITE_CLI_AI_SERVICE_BASE_URL': '需要在 Vite 应用中检查',
+            'VITE_CLI_AI_API_KEY': '需要在 Vite 应用中检查',
+            'VITE_DEFAULT_AI_SERVICE_BASE_URL': '需要在 Vite 应用中检查'
+        };
+
+        const envList = document.getElementById('env-list');
+        const configTest = document.getElementById('config-test');
+
+        // 显示环境变量
+        Object.entries(envVars).forEach(([name, value]) => {
+            const item = document.createElement('div');
+            item.className = 'env-item';
+            item.innerHTML = `
+                <div class="env-name">${name}</div>
+                <div class="env-value">${value}</div>
+            `;
+            envList.appendChild(item);
+        });
+
+        // 配置测试结果
+        configTest.innerHTML = `
+            <p><span class="success">✅</span> 环境变量配置系统已就绪</p>
+            <p><span class="warning">⚠️</span> 请在 Oji 应用中检查实际的环境变量值</p>
+            <p><span class="success">✅</span> 支持运行时和构建时配置</p>
+            <p><span class="success">✅</span> 优先级：运行时 > 构建时 > 默认值</p>
+        `;
+
+        // 显示当前测试状态
+        const testStatus = document.createElement('div');
+        testStatus.style.cssText = 'margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 5px;';
+        testStatus.innerHTML = `
+            <h4>🚀 测试状态</h4>
+            <p>要查看实际的环境变量值，请：</p>
+            <ol>
+                <li>在 Oji 应用中按 F12 打开开发者工具</li>
+                <li>查看 Console 标签页中的调试输出</li>
+                <li>或者在 Oji 应用的【Server Settings】页面查看默认值</li>
+            </ol>
+        `;
+        document.querySelector('.container').appendChild(testStatus);
+    </script>
+</body>
+</html>
