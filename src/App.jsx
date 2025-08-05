@@ -198,12 +198,18 @@ function AppContent() {
   const [renameValue, setRenameValue] = useState("");
   const [deletingChat, setDeletingChat] = useState(null);
   const [showChats, setShowChats] = useState(true);
+  const [availableModels, setAvailableModels] = useState([]);
+  const [selectedModel, setSelectedModel] = useState("");
+  const [modelsLoading, setModelsLoading] = useState(false);
   const { colorMode, toggleColorMode: TOGGLE_COLOR_MODE, setColorMode } = useColorMode();
   const { isOpen: isSidebarOpen, onToggle: toggleSidebar } = useDisclosure();
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
   const { isOpen: isSystemPromptOpen, onOpen: onSystemPromptOpen, onClose: onSystemPromptClose } = useDisclosure();
   const { isOpen: isRenameOpen, onOpen: onRenameOpen, onClose: onRenameClose } = useDisclosure();
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
+  const { isOpen: isErrorOpen, onOpen: onErrorOpen, onClose: onErrorClose } = useDisclosure();
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorTitle, setErrorTitle] = useState("Error");
   const chatRef = useRef(null);
   const fileInputRef = useRef(null);
   const inputRef = useRef(null);
@@ -337,6 +343,19 @@ function AppContent() {
     setDeletingChat(null);
   };
 
+  // 显示错误信息的函数
+  const showError = (title, message) => {
+    setErrorTitle(title);
+    setErrorMessage(message);
+    onErrorOpen();
+  };
+
+  const handleErrorClose = () => {
+    onErrorClose();
+    setErrorMessage("");
+    setErrorTitle("Error");
+  };
+
   const handleSettingsOpen = () => {
     setTempBaseUrl(baseUrl);
     setTempApiKey(apiKey);
@@ -358,44 +377,6 @@ function AppContent() {
     onSettingsClose();
   };
 
-  // 处理Modal内的键盘事件，确保粘贴功能正常工作
-  const handleModalKeyDown = (e) => {
-    // 允许Cmd+V (macOS) 和 Ctrl+V (Windows/Linux) 粘贴
-    if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
-      e.stopPropagation();
-      // 让浏览器处理默认的粘贴行为
-      return true;
-    }
-  };
-
-  // 处理Base URL的粘贴
-  const handleBaseUrlPaste = async (e) => {
-    e.preventDefault();
-    try {
-      const clipboardData = e.clipboardData || window.clipboardData;
-      const pastedData = clipboardData.getData('text');
-      setTempBaseUrl(pastedData);
-    } catch {
-      console.log('Paste fallback');
-      // 如果上面的方法失败，让浏览器处理默认粘贴
-      return true;
-    }
-  };
-
-  // 处理API Key的粘贴
-  const handleApiKeyPaste = async (e) => {
-    e.preventDefault();
-    try {
-      const clipboardData = e.clipboardData || window.clipboardData;
-      const pastedData = clipboardData.getData('text');
-      setTempApiKey(pastedData);
-    } catch {
-      console.log('Paste fallback');
-      // 如果上面的方法失败，让浏览器处理默认粘贴
-      return true;
-    }
-  };
-
   const handleSystemPromptOpen = () => {
     setTempSystemPrompt(systemPrompt);
     onSystemPromptOpen();
@@ -409,6 +390,65 @@ function AppContent() {
   const handleSystemPromptCancel = () => {
     setTempSystemPrompt(systemPrompt);
     onSystemPromptClose();
+  };
+
+  // 获取可用的模型列表
+  const fetchAvailableModels = async () => {
+    setModelsLoading(true);
+    try {
+      const response = await fetch(`${baseUrl}/models`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey.trim() && { 'Authorization': `Bearer ${apiKey.trim()}` })
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const models = data.data || [];
+        setAvailableModels(models);
+
+        // 如果还没有选择模型且有可用模型，选择第一个
+        if (!selectedModel && models.length > 0) {
+          setSelectedModel(models[0].id);
+        }
+      } else {
+        const errorText = await response.text();
+        let errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.error && errorData.error.message) {
+            errorMsg += `\n\n${errorData.error.message}`;
+          }
+        } catch (e) {
+          if (errorText.trim()) {
+            errorMsg += `\n\n${errorText}`;
+          }
+        }
+        console.warn('Failed to fetch models:', response.status);
+        setAvailableModels([]);
+        showError("Failed to Load Models", errorMsg);
+      }
+    } catch (error) {
+      console.warn('Error fetching models:', error);
+      setAvailableModels([]);
+      showError("Network Error", `Unable to connect to AI Service:\n\n${error.message}\n\nPlease check:\n1. AI Service is running\n2. Base URL is correct\n3. Network connection`);
+    } finally {
+      setModelsLoading(false);
+    }
+  };
+
+  // 应用启动时获取模型列表
+  useEffect(() => {
+    if (baseUrl) {
+      fetchAvailableModels();
+    }
+  }, [baseUrl, apiKey]);
+
+  // 当Base URL或API Key改变时重新获取模型
+  const handleModelRefresh = () => {
+    fetchAvailableModels();
   };
 
   // 图片处理函数
@@ -594,14 +634,26 @@ function AppContent() {
         method: "POST",
         headers: headers,
         body: JSON.stringify({
-          model: "Unknown", // 这里可以替换为实际的模型名称
+          model: selectedModel || "Unknown", // 使用选择的模型
           messages: messagesToSend,
           stream: useStreaming,
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        let errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.error && errorData.error.message) {
+            errorMsg += `\n\n${errorData.error.message}`;
+          }
+        } catch (e) {
+          if (errorText.trim()) {
+            errorMsg += `\n\n${errorText}`;
+          }
+        }
+        throw new Error(errorMsg);
       }
 
       if (useStreaming) {
@@ -666,11 +718,27 @@ function AppContent() {
         isElectron: !!window.electronAPI
       });
 
-      let errorMessage = "请求失败: " + (e.message || "Unknown error");
-      if (e.message.includes('fetch')) {
-        errorMessage += "\n\n请检查:\n1. AI服务是否正在运行\n2. Base URL是否正确 (默认: http://localhost:9068/v1)\n3. 网络连接是否正常";
+      let errorTitle = "Chat Request Failed";
+      let errorMessage = e.message || "Unknown error";
+
+      if (e.message.includes('fetch') || e.message.includes('Failed to fetch')) {
+        errorTitle = "Network Error";
+        errorMessage = `Unable to connect to AI Service:\n\n${e.message}\n\nPlease check:\n1. AI Service is running\n2. Base URL is correct (current: ${baseUrl})\n3. Network connection is normal`;
+      } else if (e.message.includes('HTTP 401') || e.message.includes('Unauthorized')) {
+        errorTitle = "Authentication Error";
+        errorMessage = `Authentication failed:\n\n${e.message}\n\nPlease check your API Key in settings.`;
+      } else if (e.message.includes('HTTP 403') || e.message.includes('Forbidden')) {
+        errorTitle = "Access Denied";
+        errorMessage = `Access denied:\n\n${e.message}\n\nPlease check your API Key permissions.`;
+      } else if (e.message.includes('HTTP 429') || e.message.includes('Too Many Requests')) {
+        errorTitle = "Rate Limit Exceeded";
+        errorMessage = `Rate limit exceeded:\n\n${e.message}\n\nPlease wait a moment before trying again.`;
+      } else if (e.message.includes('HTTP 500') || e.message.includes('Internal Server Error')) {
+        errorTitle = "Server Error";
+        errorMessage = `AI Service internal error:\n\n${e.message}\n\nPlease try again later or contact support.`;
       }
-      alert(errorMessage);
+
+      showError(errorTitle, errorMessage);
     } finally {
       setLoading(false);
       // 将焦点返回到输入框
@@ -849,6 +917,39 @@ function AppContent() {
                   {showChats ? "Hide Chats" : "Show Chats"}
                 </Button>
               </HStack>
+
+              {/* 中间的模型选择器 */}
+              <HStack spacing={3} align="center">
+                <Text fontSize="sm" color={colorMode === "dark" ? "gray.400" : "gray.600"}>
+                  Model:
+                </Text>
+                <Select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  size="sm"
+                  width="200px"
+                  bg={colorMode === "dark" ? "gray.700" : "white"}
+                  isDisabled={modelsLoading || availableModels.length === 0}
+                  placeholder={modelsLoading ? "Loading..." : "Select model"}
+                >
+                  {availableModels.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.id}
+                    </option>
+                  ))}
+                </Select>
+                {availableModels.length === 0 && !modelsLoading && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleModelRefresh}
+                    title="Refresh models"
+                  >
+                    🔄
+                  </Button>
+                )}
+              </HStack>
+
               <HStack spacing={3}>
                 <Tooltip
                   label="Configure system prompt"
@@ -899,7 +1000,26 @@ function AppContent() {
                 size="sm"
                 aria-label="Toggle menu"
               />
-              <Box flex="1" /> {/* 空白占位符 */}
+
+              {/* 移动端模型选择器 */}
+              <HStack spacing={2} flex="1" justify="center">
+                <Select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  size="sm"
+                  width="140px"
+                  bg={colorMode === "dark" ? "gray.700" : "white"}
+                  isDisabled={modelsLoading || availableModels.length === 0}
+                  placeholder={modelsLoading ? "Loading..." : "Model"}
+                >
+                  {availableModels.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.id.length > 15 ? `${model.id.substring(0, 15)}...` : model.id}
+                    </option>
+                  ))}
+                </Select>
+              </HStack>
+
               <HStack spacing={2}>
                 <Tooltip
                   label="Configure system prompt"
@@ -1118,7 +1238,6 @@ function AppContent() {
         <ModalContent
           maxW="800px"
           maxH="80vh"
-          onKeyDown={handleModalKeyDown}
         >
           <ModalHeader
             borderBottom="1px"
@@ -1296,12 +1415,23 @@ function AppContent() {
                             placeholder="http://localhost:9068/v1"
                             autoComplete="off"
                             spellCheck="false"
-                            onPaste={handleBaseUrlPaste}
+                            onPaste={(e) => {
+                              console.log('Base URL paste event triggered:', e);
+                              // 确保粘贴功能正常工作
+                              setTimeout(() => {
+                                const pastedValue = e.target.value;
+                                if (pastedValue !== tempBaseUrl) {
+                                  setTempBaseUrl(pastedValue);
+                                  console.log('Base URL updated via paste:', pastedValue);
+                                }
+                              }, 0);
+                            }}
                             onKeyDown={(e) => {
-                              // 明确允许Cmd+V (macOS) 和 Ctrl+V (Windows/Linux)
                               if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
-                                e.stopPropagation();
-                                return true;
+                                console.log('Base URL paste shortcut detected:', e);
+                                // 确保事件不被阻止
+                                e.stopPropagation = () => {};
+                                e.preventDefault = () => {};
                               }
                             }}
                           />
@@ -1325,12 +1455,23 @@ function AppContent() {
                               placeholder="Enter your API key (optional)"
                               autoComplete="off"
                               spellCheck="false"
-                              onPaste={handleApiKeyPaste}
+                              onPaste={(e) => {
+                                console.log('API Key paste event triggered:', e);
+                                // 确保粘贴功能正常工作
+                                setTimeout(() => {
+                                  const pastedValue = e.target.value;
+                                  if (pastedValue !== tempApiKey) {
+                                    setTempApiKey(pastedValue);
+                                    console.log('API Key updated via paste:', pastedValue);
+                                  }
+                                }, 0);
+                              }}
                               onKeyDown={(e) => {
-                                // 明确允许Cmd+V (macOS) 和 Ctrl+V (Windows/Linux)
                                 if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
-                                  e.stopPropagation();
-                                  return true;
+                                  console.log('API Key paste shortcut detected:', e);
+                                  // 确保事件不被阻止
+                                  e.stopPropagation = () => {};
+                                  e.preventDefault = () => {};
                                 }
                               }}
                             />
@@ -1590,6 +1731,54 @@ function AppContent() {
               onClick={handleDeleteConfirm}
             >
               Delete
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* 错误显示Modal */}
+      <Modal
+        isOpen={isErrorOpen}
+        onClose={handleErrorClose}
+        size="md"
+        isCentered
+      >
+        <ModalOverlay />
+        <ModalContent
+          bg={colorMode === "dark" ? "gray.800" : "white"}
+          borderRadius="xl"
+          mx={4}
+        >
+          <ModalHeader
+            borderBottom="1px"
+            borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+          >
+            <HStack>
+              <Text color="red.500" fontSize="lg">⚠️</Text>
+              <Text>{errorTitle}</Text>
+            </HStack>
+          </ModalHeader>
+
+          <ModalBody p={6}>
+            <Text
+              fontSize="md"
+              whiteSpace="pre-line"
+              color={colorMode === "dark" ? "gray.300" : "gray.700"}
+            >
+              {errorMessage}
+            </Text>
+          </ModalBody>
+
+          <ModalFooter
+            borderTop="1px"
+            borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+          >
+            <Button
+              colorScheme="blue"
+              onClick={handleErrorClose}
+              width="100%"
+            >
+              OK
             </Button>
           </ModalFooter>
         </ModalContent>
