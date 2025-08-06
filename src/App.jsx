@@ -415,15 +415,59 @@ function AppContent() {
         }
       } else {
         const errorText = await response.text();
+        console.log('Models API error response:', errorText); // 调试日志
         let errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+
+        // 尝试解析JSON错误响应
         try {
           const errorData = JSON.parse(errorText);
-          if (errorData.error && errorData.error.message) {
-            errorMsg += `\n\n${errorData.error.message}`;
+          console.log('Parsed models error data:', errorData); // 调试日志
+
+          // 优先查找嵌套的error对象（OpenAI格式）
+          if (errorData.error) {
+            if (errorData.error.message) {
+              errorMsg += `\n\nError: ${errorData.error.message}`;
+            }
+            if (errorData.error.type) {
+              errorMsg += `\nType: ${errorData.error.type}`;
+            }
+            if (errorData.error.code) {
+              errorMsg += `\nCode: ${errorData.error.code}`;
+            }
+            if (errorData.error.details) {
+              errorMsg += `\nDetails: ${errorData.error.details}`;
+            }
           }
-        } catch {
+          // 查找顶级message字段
+          else if (errorData.message) {
+            errorMsg += `\n\nMessage: ${errorData.message}`;
+          }
+          // 查找detail字段（FastAPI格式）
+          else if (errorData.detail) {
+            errorMsg += `\n\nDetail: ${errorData.detail}`;
+          }
+          // 查找其他可能的错误字段
+          else if (errorData.error_message) {
+            errorMsg += `\n\nError Message: ${errorData.error_message}`;
+          }
+          else if (errorData.description) {
+            errorMsg += `\n\nDescription: ${errorData.description}`;
+          }
+          // 如果有多个字段，尝试找到最相关的
+          else {
+            const possibleErrorFields = ['msg', 'reason', 'info', 'error_description'];
+            for (const field of possibleErrorFields) {
+              if (errorData[field]) {
+                errorMsg += `\n\n${field}: ${errorData[field]}`;
+                break;
+              }
+            }
+          }
+        } catch (parseError) {
+          console.log('Models JSON parse error:', parseError); // 调试日志
+          // 如果不是JSON，显示原始错误文本
           if (errorText.trim()) {
-            errorMsg += `\n\n${errorText}`;
+            errorMsg += `\n\nServer Response:\n${errorText}`;
           }
         }
         console.warn('Failed to fetch models:', response.status);
@@ -642,15 +686,59 @@ function AppContent() {
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.log('Error response text:', errorText); // 调试日志
         let errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+
+        // 尝试解析JSON错误响应
         try {
           const errorData = JSON.parse(errorText);
-          if (errorData.error && errorData.error.message) {
-            errorMsg += `\n\n${errorData.error.message}`;
+          console.log('Parsed error data:', errorData); // 调试日志
+
+          // 优先查找嵌套的error对象（OpenAI格式）
+          if (errorData.error) {
+            if (errorData.error.message) {
+              errorMsg += `\n\nError: ${errorData.error.message}`;
+            }
+            if (errorData.error.type) {
+              errorMsg += `\nType: ${errorData.error.type}`;
+            }
+            if (errorData.error.code) {
+              errorMsg += `\nCode: ${errorData.error.code}`;
+            }
+            if (errorData.error.details) {
+              errorMsg += `\nDetails: ${errorData.error.details}`;
+            }
           }
-        } catch {
+          // 查找顶级message字段
+          else if (errorData.message) {
+            errorMsg += `\n\nMessage: ${errorData.message}`;
+          }
+          // 查找detail字段（FastAPI格式）
+          else if (errorData.detail) {
+            errorMsg += `\n\nDetail: ${errorData.detail}`;
+          }
+          // 查找其他可能的错误字段
+          else if (errorData.error_message) {
+            errorMsg += `\n\nError Message: ${errorData.error_message}`;
+          }
+          else if (errorData.description) {
+            errorMsg += `\n\nDescription: ${errorData.description}`;
+          }
+          // 如果有多个字段，尝试找到最相关的
+          else {
+            const possibleErrorFields = ['msg', 'reason', 'info', 'error_description'];
+            for (const field of possibleErrorFields) {
+              if (errorData[field]) {
+                errorMsg += `\n\n${field}: ${errorData[field]}`;
+                break;
+              }
+            }
+          }
+        } catch (parseError) {
+          console.log('JSON parse error:', parseError); // 调试日志
+          // 如果不是JSON，显示原始错误文本
           if (errorText.trim()) {
-            errorMsg += `\n\n${errorText}`;
+            errorMsg += `\n\nServer Response:\n${errorText}`;
           }
         }
         throw new Error(errorMsg);
@@ -726,16 +814,105 @@ function AppContent() {
         errorMessage = `Unable to connect to AI Service:\n\n${e.message}\n\nPlease check:\n1. AI Service is running\n2. Base URL is correct (current: ${baseUrl})\n3. Network connection is normal`;
       } else if (e.message.includes('HTTP 401') || e.message.includes('Unauthorized')) {
         errorTitle = "Authentication Error";
-        errorMessage = `Authentication failed:\n\n${e.message}\n\nPlease check your API Key in settings.`;
+
+        // 提取详细错误信息
+        const lines = e.message.split('\n');
+        const statusLine = lines[0];
+        const detailsStartIndex = lines.findIndex(line => line.trim() && !line.startsWith('HTTP'));
+
+        let serverDetails = "";
+        if (detailsStartIndex !== -1) {
+          serverDetails = lines.slice(detailsStartIndex).join('\n').trim();
+        }
+
+        errorMessage = `Authentication failed:\n\n${statusLine}`;
+
+        if (serverDetails) {
+          errorMessage += `\n\nServer Response:\n${serverDetails}`;
+        }
+
+        errorMessage += `\n\nSolutions:\n• Check your API Key in settings\n• Verify the API Key is valid and active\n• Ensure the API Key has the correct permissions`;
       } else if (e.message.includes('HTTP 403') || e.message.includes('Forbidden')) {
         errorTitle = "Access Denied";
-        errorMessage = `Access denied:\n\n${e.message}\n\nPlease check your API Key permissions.`;
+
+        // 提取详细错误信息
+        const lines = e.message.split('\n');
+        const statusLine = lines[0];
+        const detailsStartIndex = lines.findIndex(line => line.trim() && !line.startsWith('HTTP'));
+
+        let serverDetails = "";
+        if (detailsStartIndex !== -1) {
+          serverDetails = lines.slice(detailsStartIndex).join('\n').trim();
+        }
+
+        errorMessage = `Access denied:\n\n${statusLine}`;
+
+        if (serverDetails) {
+          errorMessage += `\n\nServer Response:\n${serverDetails}`;
+        }
+
+        errorMessage += `\n\nSolutions:\n• Check your API Key permissions\n• Verify your account has access to this service\n• Contact your administrator if this is unexpected`;
       } else if (e.message.includes('HTTP 429') || e.message.includes('Too Many Requests')) {
         errorTitle = "Rate Limit Exceeded";
-        errorMessage = `Rate limit exceeded:\n\n${e.message}\n\nPlease wait a moment before trying again.`;
+
+        // 提取详细错误信息和rate limit信息
+        const lines = e.message.split('\n');
+        const statusLine = lines[0];
+        const detailsStartIndex = lines.findIndex(line => line.trim() && !line.startsWith('HTTP'));
+
+        let serverDetails = "";
+        if (detailsStartIndex !== -1) {
+          serverDetails = lines.slice(detailsStartIndex).join('\n').trim();
+        }
+
+        errorMessage = `Rate limit exceeded:\n\n${statusLine}`;
+
+        if (serverDetails) {
+          errorMessage += `\n\nServer Response:\n${serverDetails}`;
+        }
+
+        errorMessage += `\n\nSolutions:\n• Wait a moment before trying again\n• Check your usage limits\n• Consider upgrading your plan if needed\n• Reduce request frequency`;
       } else if (e.message.includes('HTTP 500') || e.message.includes('Internal Server Error')) {
         errorTitle = "Server Error";
-        errorMessage = `AI Service internal error:\n\n${e.message}\n\nPlease try again later or contact support.`;
+
+        // 直接使用完整的错误消息，因为它已经包含了解析后的详细信息
+        errorMessage = e.message;
+
+        // 如果消息太简短，添加故障排除信息
+        if (!e.message.includes('Error:') && !e.message.includes('Detail:') && !e.message.includes('Message:')) {
+          errorMessage += `\n\nTroubleshooting:\n• Check server logs for detailed error information\n• Verify the AI service is running properly\n• Try again in a few moments\n• Contact support if the issue persists`;
+        }
+      } else if (e.message.includes('HTTP 400') || e.message.includes('Bad Request')) {
+        errorTitle = "Bad Request";
+
+        // 直接使用完整的错误消息
+        errorMessage = e.message;
+
+        // 如果消息太简短，添加解决方案
+        if (!e.message.includes('Error:') && !e.message.includes('Detail:') && !e.message.includes('Message:')) {
+          errorMessage += `\n\nSolutions:\n• Check your request parameters\n• Verify the selected model is valid\n• Try with different input\n• Check the API documentation`;
+        }
+      } else if (e.message.includes('HTTP 404') || e.message.includes('Not Found')) {
+        errorTitle = "Service Not Found";
+
+        // 直接使用完整的错误消息
+        errorMessage = e.message;
+
+        // 如果消息太简短，添加解决方案
+        if (!e.message.includes('Error:') && !e.message.includes('Detail:') && !e.message.includes('Message:')) {
+          errorMessage += `\n\nSolutions:\n• Check the Base URL in settings\n• Verify the AI service is running\n• Ensure the API endpoint is correct\n• Contact administrator for correct endpoint`;
+        }
+      } else if (e.message.startsWith('HTTP')) {
+        // 处理其他HTTP错误
+        errorTitle = "HTTP Error";
+
+        // 直接使用完整的错误消息
+        errorMessage = e.message;
+
+        // 如果消息太简短，添加解决方案
+        if (!e.message.includes('Error:') && !e.message.includes('Detail:') && !e.message.includes('Message:')) {
+          errorMessage += `\n\nSolutions:\n• Check the AI service status\n• Verify your connection settings\n• Try again later\n• Contact support if the issue persists`;
+        }
       }
 
       showError(errorTitle, errorMessage);
