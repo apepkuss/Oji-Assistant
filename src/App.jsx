@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   ChakraProvider, Box, Flex, Input, Button, Text, VStack, HStack, Heading, useColorMode, IconButton,
   Avatar, Divider, InputGroup, InputRightElement, InputLeftElement, Textarea, useDisclosure, Tooltip,
@@ -344,11 +344,11 @@ function AppContent() {
   };
 
   // 显示错误信息的函数
-  const showError = (title, message) => {
+  const showError = useCallback((title, message) => {
     setErrorTitle(title);
     setErrorMessage(message);
     onErrorOpen();
-  };
+  }, [onErrorOpen]);
 
   const handleErrorClose = () => {
     onErrorClose();
@@ -393,7 +393,7 @@ function AppContent() {
   };
 
   // 获取可用的模型列表
-  const fetchAvailableModels = async () => {
+  const fetchAvailableModels = useCallback(async () => {
     setModelsLoading(true);
     try {
       const response = await fetch(`${baseUrl}/models`, {
@@ -421,7 +421,7 @@ function AppContent() {
           if (errorData.error && errorData.error.message) {
             errorMsg += `\n\n${errorData.error.message}`;
           }
-        } catch (e) {
+        } catch {
           if (errorText.trim()) {
             errorMsg += `\n\n${errorText}`;
           }
@@ -437,14 +437,14 @@ function AppContent() {
     } finally {
       setModelsLoading(false);
     }
-  };
+  }, [baseUrl, apiKey, showError, selectedModel]);
 
   // 应用启动时获取模型列表
   useEffect(() => {
     if (baseUrl) {
       fetchAvailableModels();
     }
-  }, [baseUrl, apiKey]);
+  }, [baseUrl, apiKey, fetchAvailableModels]);
 
   // 当Base URL或API Key改变时重新获取模型
   const handleModelRefresh = () => {
@@ -648,7 +648,7 @@ function AppContent() {
           if (errorData.error && errorData.error.message) {
             errorMsg += `\n\n${errorData.error.message}`;
           }
-        } catch (e) {
+        } catch {
           if (errorText.trim()) {
             errorMsg += `\n\n${errorText}`;
           }
