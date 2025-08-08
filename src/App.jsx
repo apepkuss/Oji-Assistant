@@ -201,6 +201,15 @@ function AppContent() {
   const [availableModels, setAvailableModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState("");
   const [modelsLoading, setModelsLoading] = useState(false);
+  const [tempAvailableModels, setTempAvailableModels] = useState([]);
+  const [tempSelectedModel, setTempSelectedModel] = useState("");
+  const [tempModelsLoading, setTempModelsLoading] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState(""); // "success", "error", "timeout", "cancelled", or ""
+  const [connectionAbortController, setConnectionAbortController] = useState(null);
+  const [connectionStartTime, setConnectionStartTime] = useState(null);
+  const [connectionTimer, setConnectionTimer] = useState(0);
+  const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
+  const [userCancelledConnection, setUserCancelledConnection] = useState(false);
   const { colorMode, toggleColorMode: TOGGLE_COLOR_MODE, setColorMode } = useColorMode();
   const { isOpen: isSidebarOpen, onToggle: toggleSidebar } = useDisclosure();
   const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
@@ -360,6 +369,12 @@ function AppContent() {
     setTempBaseUrl(baseUrl);
     setTempApiKey(apiKey);
     setTempUseStreaming(useStreaming);
+
+    // 初始化临时模型状态
+    setTempAvailableModels(availableModels);
+    setTempSelectedModel(selectedModel);
+    setConnectionStatus(availableModels.length > 0 ? "success" : "");
+
     onSettingsOpen();
   };
 
@@ -367,6 +382,17 @@ function AppContent() {
     setBaseUrl(tempBaseUrl);
     setApiKey(tempApiKey);
     setUseStreaming(tempUseStreaming);
+
+    // 如果有选择的临时模型，更新到主状态
+    if (tempSelectedModel) {
+      setSelectedModel(tempSelectedModel);
+    }
+
+    // 如果连接成功，更新主模型列表
+    if (connectionStatus === "success" && tempAvailableModels.length > 0) {
+      setAvailableModels(tempAvailableModels);
+    }
+
     onSettingsClose();
   };
 
@@ -374,6 +400,23 @@ function AppContent() {
     setTempBaseUrl(baseUrl);
     setTempApiKey(apiKey);
     setTempUseStreaming(useStreaming);
+
+    // 取消正在进行的连接
+    if (connectionAbortController) {
+      connectionAbortController.abort();
+      setConnectionAbortController(null);
+      setTempModelsLoading(false);
+    }
+
+    // 重置临时状态
+    setTempAvailableModels([]);
+    setTempSelectedModel("");
+    setConnectionStatus("");
+    setConnectionErrorMessage("");
+    setUserCancelledConnection(false);
+    setConnectionStartTime(null);
+    setConnectionTimer(0);
+
     onSettingsClose();
   };
 
@@ -391,6 +434,158 @@ function AppContent() {
     setTempSystemPrompt(systemPrompt);
     onSystemPromptClose();
   };
+
+  // 测试连接并获取模型列表（用于设置页面）
+  const testConnectionAndFetchModels = useCallback(async () => {
+    setTempModelsLoading(true);
+    setConnectionStatus("");
+    setConnectionErrorMessage("");
+    setUserCancelledConnection(false);
+    setConnectionStartTime(Date.now());
+    setConnectionTimer(0);
+
+    // 创建AbortController用于取消请求
+    const abortController = new AbortController();
+    setConnectionAbortController(abortController);
+
+    // 设置超时时间（30秒）
+    const timeoutId = setTimeout(() => {
+      abortController.abort();
+    }, 30000);
+
+    // 设置计时器更新
+    const timerInterval = setInterval(() => {
+      setConnectionTimer(prev => prev + 1);
+    }, 1000);
+
+    try {
+      const response = await fetch(`${tempBaseUrl}/models`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(tempApiKey.trim() && { 'Authorization': `Bearer ${tempApiKey.trim()}` })
+        },
+        signal: abortController.signal
+      });
+
+      // 清除超时和计时器
+      clearTimeout(timeoutId);
+      clearInterval(timerInterval);
+
+      if (response.ok) {
+        const data = await response.json();
+        const models = data.data || [];
+        setTempAvailableModels(models);
+        setConnectionStatus("success");
+
+        // 如果还没有选择模型且有可用模型，选择第一个
+        if (!tempSelectedModel && models.length > 0) {
+          setTempSelectedModel(models[0].id);
+        }
+      } else {
+        const errorText = await response.text();
+        console.log('Connection test API error response:', errorText);
+        let errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.error?.message) {
+            errorMsg += `\n\nError: ${errorData.error.message}`;
+          } else if (errorData.message) {
+            errorMsg += `\n\nMessage: ${errorData.message}`;
+          } else if (errorData.detail) {
+            errorMsg += `\n\nDetail: ${errorData.detail}`;
+          }
+        } catch (parseError) {
+          if (errorText.trim()) {
+            errorMsg += `\n\nServer Response:\n${errorText}`;
+          }
+        }
+
+        setTempAvailableModels([]);
+        setConnectionStatus("error");
+
+        // 设置简化的错误消息用于UI显示
+        let uiErrorMessage = `HTTP ${response.status}`;
+        if (response.status === 401) {
+          uiErrorMessage = "Authentication failed - Check API key";
+        } else if (response.status === 403) {
+          uiErrorMessage = "Access denied - Invalid permissions";
+        } else if (response.status === 404) {
+          uiErrorMessage = "Endpoint not found - Check URL path";
+        } else if (response.status === 500) {
+          uiErrorMessage = "Server error - Service may be down";
+        } else if (response.status >= 400 && response.status < 500) {
+          uiErrorMessage = "Client error - Check request format";
+        } else if (response.status >= 500) {
+          uiErrorMessage = "Server error - Try again later";
+        }
+
+        setConnectionErrorMessage(uiErrorMessage);
+        showError("Connection Failed", errorMsg);
+      }
+    } catch (error) {
+      // 清除超时和计时器
+      clearTimeout(timeoutId);
+      clearInterval(timerInterval);
+
+      if (error.name === 'AbortError') {
+        // 请求被取消
+        setTempAvailableModels([]);
+
+        if (userCancelledConnection) {
+          // 用户主动取消，不显示任何错误信息
+          setConnectionStatus("");
+          setConnectionErrorMessage("");
+          console.log('Connection test was cancelled by user');
+        } else {
+          // 超时取消，显示为连接失败，但不弹窗
+          setConnectionStatus("timeout");
+          setConnectionErrorMessage("Connection timed out after 30 seconds");
+          console.log('Connection test timed out');
+        }
+      } else {
+        console.warn('Connection test error:', error);
+        setTempAvailableModels([]);
+        setConnectionStatus("error");
+
+        // 设置更具体的网络错误信息
+        let uiErrorMessage = "Network error";
+        if (error.message.includes('Failed to fetch')) {
+          uiErrorMessage = "Cannot reach server - Check URL and network";
+        } else if (error.message.includes('NetworkError')) {
+          uiErrorMessage = "Network error - Check internet connection";
+        } else if (error.message.includes('CORS')) {
+          uiErrorMessage = "CORS error - Server configuration issue";
+        } else {
+          uiErrorMessage = `Network error: ${error.message}`;
+        }
+        setConnectionErrorMessage(uiErrorMessage);
+
+        showError("Network Error", `Unable to connect to AI Service:\n\n${error.message}\n\nPlease check:\n1. AI Service is running\n2. Base URL is correct\n3. Network connection`);
+      }
+    } finally {
+      setTempModelsLoading(false);
+      setConnectionAbortController(null);
+      setConnectionStartTime(null);
+      setConnectionTimer(0);
+      // 不在这里清理错误消息，让状态信息保持显示
+    }
+  }, [tempBaseUrl, tempApiKey, showError, tempSelectedModel]);
+
+  // 取消连接
+  const cancelConnection = useCallback(() => {
+    if (connectionAbortController) {
+      setUserCancelledConnection(true); // 标记为用户主动取消
+      connectionAbortController.abort();
+      setConnectionAbortController(null);
+      setTempModelsLoading(false);
+      setConnectionStatus("");
+      setConnectionErrorMessage("");
+      setConnectionStartTime(null);
+      setConnectionTimer(0);
+    }
+  }, [connectionAbortController]);
 
   // 获取可用的模型列表
   const fetchAvailableModels = useCallback(async () => {
@@ -1586,35 +1781,84 @@ function AppContent() {
                       <VStack spacing={4} align="stretch">
                         <FormControl>
                           <FormLabel fontSize="sm" fontWeight="600">AI Service Base URL</FormLabel>
-                          <Input
-                            value={tempBaseUrl}
-                            onChange={(e) => setTempBaseUrl(e.target.value)}
-                            placeholder="http://localhost:9068/v1"
-                            autoComplete="off"
-                            spellCheck="false"
-                            onPaste={(e) => {
-                              console.log('Base URL paste event triggered:', e);
-                              // 确保粘贴功能正常工作
-                              setTimeout(() => {
-                                const pastedValue = e.target.value;
-                                if (pastedValue !== tempBaseUrl) {
-                                  setTempBaseUrl(pastedValue);
-                                  console.log('Base URL updated via paste:', pastedValue);
+                          <HStack spacing={2}>
+                            <Input
+                              value={tempBaseUrl}
+                              onChange={(e) => setTempBaseUrl(e.target.value)}
+                              placeholder="http://localhost:9068/v1"
+                              autoComplete="off"
+                              spellCheck="false"
+                              onPaste={(e) => {
+                                console.log('Base URL paste event triggered:', e);
+                                // 确保粘贴功能正常工作
+                                setTimeout(() => {
+                                  const pastedValue = e.target.value;
+                                  if (pastedValue !== tempBaseUrl) {
+                                    setTempBaseUrl(pastedValue);
+                                    console.log('Base URL updated via paste:', pastedValue);
+                                  }
+                                }, 0);
+                              }}
+                              onKeyDown={(e) => {
+                                if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
+                                  console.log('Base URL paste shortcut detected:', e);
+                                  // 确保事件不被阻止
+                                  e.stopPropagation = () => {};
+                                  e.preventDefault = () => {};
                                 }
-                              }, 0);
-                            }}
-                            onKeyDown={(e) => {
-                              if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
-                                console.log('Base URL paste shortcut detected:', e);
-                                // 确保事件不被阻止
-                                e.stopPropagation = () => {};
-                                e.preventDefault = () => {};
-                              }
-                            }}
-                          />
+                              }}
+                            />
+                            {tempModelsLoading ? (
+                              <Button
+                                onClick={cancelConnection}
+                                colorScheme="red"
+                                variant="outline"
+                                size="md"
+                                minW="80px"
+                              >
+                                Cancel
+                              </Button>
+                            ) : (
+                              <Button
+                                onClick={testConnectionAndFetchModels}
+                                colorScheme={
+                                  connectionStatus === "success" ? "green" :
+                                  connectionStatus === "error" ? "red" :
+                                  connectionStatus === "timeout" ? "red" : "blue"
+                                }
+                                variant={connectionStatus === "success" ? "solid" : "outline"}
+                                size="md"
+                                minW="100px"
+                              >
+                                {connectionStatus === "success" ? "Connected" :
+                                 connectionStatus === "error" ? "Retry" :
+                                 connectionStatus === "timeout" ? "Retry" : "Connect"}
+                              </Button>
+                            )}
+                          </HStack>
                           <Text fontSize="xs" color="gray.500" mt={1}>
                             Configure the base URL for your AI service endpoint
                           </Text>
+                          {tempModelsLoading && (
+                            <Text fontSize="xs" color="blue.500" mt={1}>
+                              🔄 Connecting... {connectionTimer}s / 30s (Click Cancel to stop)
+                            </Text>
+                          )}
+                          {connectionStatus === "success" && (
+                            <Text fontSize="xs" color="green.500" mt={1}>
+                              ✅ Successfully connected - {tempAvailableModels.length} model(s) available
+                            </Text>
+                          )}
+                          {connectionStatus === "error" && (
+                            <Text fontSize="xs" color="red.500" mt={1}>
+                              ❌ Connection failed - {connectionErrorMessage}
+                            </Text>
+                          )}
+                          {connectionStatus === "timeout" && (
+                            <Text fontSize="xs" color="red.500" mt={1}>
+                              ❌ Connection failed - {connectionErrorMessage}
+                            </Text>
+                          )}
                         </FormControl>
 
                         <FormControl>
@@ -1664,6 +1908,30 @@ function AppContent() {
                           </InputGroup>
                           <Text fontSize="xs" color="gray.500" mt={1}>
                             API key for authenticated access to your AI service (will be sent in Authorization header)
+                          </Text>
+                        </FormControl>
+
+                        <FormControl>
+                          <FormLabel fontSize="sm" fontWeight="600">
+                            Model
+                            <Text as="span" fontSize="xs" color="gray.500" fontWeight="normal" ml={1}>
+                              (Available after connecting)
+                            </Text>
+                          </FormLabel>
+                          <Select
+                            value={tempSelectedModel}
+                            onChange={(e) => setTempSelectedModel(e.target.value)}
+                            placeholder={tempModelsLoading ? "Loading models..." : connectionStatus === "success" ? "Select a model" : "Connect to see available models"}
+                            isDisabled={tempModelsLoading || tempAvailableModels.length === 0}
+                          >
+                            {tempAvailableModels.map((model) => (
+                              <option key={model.id} value={model.id}>
+                                {model.id}
+                              </option>
+                            ))}
+                          </Select>
+                          <Text fontSize="xs" color="gray.500" mt={1}>
+                            Select the AI model to use for conversations
                           </Text>
                         </FormControl>
 
