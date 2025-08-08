@@ -208,7 +208,6 @@ function AppContent() {
   const [tempModelsLoading, setTempModelsLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(""); // "success", "error", "timeout", "cancelled", or ""
   const [connectionAbortController, setConnectionAbortController] = useState(null);
-  const [connectionStartTime, setConnectionStartTime] = useState(null);
   const [connectionTimer, setConnectionTimer] = useState(0);
   const [connectionErrorMessage, setConnectionErrorMessage] = useState("");
   const [userCancelledConnection, setUserCancelledConnection] = useState(false);
@@ -419,7 +418,6 @@ function AppContent() {
     setConnectionStatus("");
     setConnectionErrorMessage("");
     setUserCancelledConnection(false);
-    setConnectionStartTime(null);
     setConnectionTimer(0);
 
     onSettingsClose();
@@ -446,7 +444,6 @@ function AppContent() {
     setConnectionStatus("");
     setConnectionErrorMessage("");
     setUserCancelledConnection(false);
-    setConnectionStartTime(Date.now());
     setConnectionTimer(0);
 
     // 创建AbortController用于取消请求
@@ -501,7 +498,7 @@ function AppContent() {
           } else if (errorData.detail) {
             errorMsg += `\n\nDetail: ${errorData.detail}`;
           }
-        } catch (parseError) {
+        } catch {
           if (errorText.trim()) {
             errorMsg += `\n\nServer Response:\n${errorText}`;
           }
@@ -572,11 +569,10 @@ function AppContent() {
     } finally {
       setTempModelsLoading(false);
       setConnectionAbortController(null);
-      setConnectionStartTime(null);
       setConnectionTimer(0);
       // 不在这里清理错误消息，让状态信息保持显示
     }
-  }, [tempBaseUrl, tempApiKey, showError, tempSelectedModel]);
+  }, [tempBaseUrl, tempApiKey, showError, tempSelectedModel, userCancelledConnection]);
 
   // 取消连接
   const cancelConnection = useCallback(() => {
@@ -587,7 +583,6 @@ function AppContent() {
       setTempModelsLoading(false);
       setConnectionStatus("");
       setConnectionErrorMessage("");
-      setConnectionStartTime(null);
       setConnectionTimer(0);
     }
   }, [connectionAbortController]);
