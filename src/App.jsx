@@ -193,6 +193,8 @@ function AppContent() {
   const [language, setLanguage] = useState("English");
   const [systemPrompt, setSystemPrompt] = useState("You are a helpful AI assistant.");
   const [tempSystemPrompt, setTempSystemPrompt] = useState("You are a helpful AI assistant.");
+  const [maxCompletionTokens, setMaxCompletionTokens] = useState(8192);
+  const [tempMaxCompletionTokens, setTempMaxCompletionTokens] = useState(8192);
   const [selectedImages, setSelectedImages] = useState([]);
   const [renamingChat, setRenamingChat] = useState(null);
   const [renameValue, setRenameValue] = useState("");
@@ -369,6 +371,7 @@ function AppContent() {
     setTempBaseUrl(baseUrl);
     setTempApiKey(apiKey);
     setTempUseStreaming(useStreaming);
+    setTempMaxCompletionTokens(maxCompletionTokens);
 
     // 初始化临时模型状态
     setTempAvailableModels(availableModels);
@@ -382,6 +385,7 @@ function AppContent() {
     setBaseUrl(tempBaseUrl);
     setApiKey(tempApiKey);
     setUseStreaming(tempUseStreaming);
+    setMaxCompletionTokens(tempMaxCompletionTokens);
 
     // 如果有选择的临时模型，更新到主状态
     if (tempSelectedModel) {
@@ -400,6 +404,7 @@ function AppContent() {
     setTempBaseUrl(baseUrl);
     setTempApiKey(apiKey);
     setTempUseStreaming(useStreaming);
+    setTempMaxCompletionTokens(maxCompletionTokens);
 
     // 取消正在进行的连接
     if (connectionAbortController) {
@@ -876,6 +881,7 @@ function AppContent() {
           model: selectedModel || "Unknown", // 使用选择的模型
           messages: messagesToSend,
           stream: useStreaming,
+          max_completion_tokens: maxCompletionTokens,
         }),
       });
 
@@ -1957,7 +1963,32 @@ function AppContent() {
                 <TabPanel p={0}>
                   <VStack spacing={6} align="stretch">
                     <Heading size="md">Chat Settings</Heading>
-                    <Text color="gray.500">Chat configuration options will be available here.</Text>
+
+                    <Box
+                      p={6}
+                      borderRadius="md"
+                      border="1px"
+                      borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+                      bg={colorMode === "dark" ? "gray.800" : "white"}
+                    >
+                      <VStack spacing={4} align="stretch">
+                        <FormControl>
+                          <FormLabel>Max Completion Tokens</FormLabel>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="100000"
+                            step="1"
+                            value={tempMaxCompletionTokens}
+                            onChange={(e) => setTempMaxCompletionTokens(parseInt(e.target.value) || 8192)}
+                            placeholder="8192"
+                          />
+                          <Text fontSize="sm" color="gray.500" mt={1}>
+                            Maximum number of tokens that can be generated in the completion. Default: 8192
+                          </Text>
+                        </FormControl>
+                      </VStack>
+                    </Box>
                   </VStack>
                 </TabPanel>
 
