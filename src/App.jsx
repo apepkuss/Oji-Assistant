@@ -149,16 +149,15 @@ function AppContent() {
   const getDefaultBaseUrl = () => {
     const runtimeBaseUrl = import.meta.env.VITE_RUNTIME_AI_SERVICE_BASE_URL;
     const defaultBaseUrl = import.meta.env.VITE_DEFAULT_AI_SERVICE_BASE_URL;
-    const fallbackUrl = "http://localhost:9068/v1";
 
-    const result = runtimeBaseUrl || defaultBaseUrl || fallbackUrl;
+    const result = runtimeBaseUrl || defaultBaseUrl || "";
 
     // 开发模式下显示调试信息
     if (import.meta.env.DEV) {
       console.log('Environment Variables Debug:');
       console.log('  AI_BASE_URL (runtime):', runtimeBaseUrl || 'not set');
       console.log('  VITE_DEFAULT_AI_SERVICE_BASE_URL (build-time):', defaultBaseUrl || 'not set');
-      console.log('  Selected Base URL:', result);
+      console.log('  Selected Base URL:', result || 'empty');
     }
 
     return result;
@@ -678,13 +677,6 @@ function AppContent() {
       setModelsLoading(false);
     }
   }, [baseUrl, apiKey, showError, selectedModel]);
-
-  // 应用启动时获取模型列表
-  useEffect(() => {
-    if (baseUrl) {
-      fetchAvailableModels();
-    }
-  }, [baseUrl, apiKey, fetchAvailableModels]);
 
   // 当Base URL或API Key改变时重新获取模型
   const handleModelRefresh = () => {
@@ -1304,7 +1296,7 @@ function AppContent() {
                   width="200px"
                   bg={colorMode === "dark" ? "gray.700" : "white"}
                   isDisabled={modelsLoading || availableModels.length === 0}
-                  placeholder={modelsLoading ? "Loading..." : "Select model"}
+                  placeholder={modelsLoading ? "Loading..." : availableModels.length === 0 ? "Configure AI service first" : "Select model"}
                 >
                   {availableModels.map((model) => (
                     <option key={model.id} value={model.id}>
@@ -1384,7 +1376,7 @@ function AppContent() {
                   width="140px"
                   bg={colorMode === "dark" ? "gray.700" : "white"}
                   isDisabled={modelsLoading || availableModels.length === 0}
-                  placeholder={modelsLoading ? "Loading..." : "Model"}
+                  placeholder={modelsLoading ? "Loading..." : availableModels.length === 0 ? "No models" : "Model"}
                 >
                   {availableModels.map((model) => (
                     <option key={model.id} value={model.id}>
@@ -1787,7 +1779,7 @@ function AppContent() {
                             <Input
                               value={tempBaseUrl}
                               onChange={(e) => setTempBaseUrl(e.target.value)}
-                              placeholder="http://localhost:9068/v1"
+                              placeholder="Enter AI service base URL (e.g., http://localhost:9068/v1)"
                               autoComplete="off"
                               spellCheck="false"
                               onPaste={(e) => {
