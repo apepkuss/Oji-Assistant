@@ -10,6 +10,7 @@ import {
 import { SunIcon, MoonIcon, AddIcon, ChatIcon, SettingsIcon, HamburgerIcon, EditIcon, DeleteIcon, ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { PenTool, ImagePlus, Paperclip, MoreHorizontal, PanelLeft, PanelLeftClose } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import packageInfo from "../package.json";
 
 // 主题配置
@@ -124,9 +125,31 @@ function ChatBubble({ role, content, images = [] }) {
               paddingLeft: 3,
               marginLeft: 2,
               marginBottom: 2
+            },
+            '& table': {
+              borderCollapse: 'collapse',
+              width: '100%',
+              marginBottom: 2,
+              fontSize: '0.9em'
+            },
+            '& thead': {
+              backgroundColor: colorMode === "dark" ? "gray.600" : "gray.100"
+            },
+            '& th, & td': {
+              border: '1px solid',
+              borderColor: colorMode === "dark" ? "gray.600" : "gray.300",
+              padding: '8px 12px',
+              textAlign: 'left'
+            },
+            '& th': {
+              fontWeight: 'bold',
+              backgroundColor: colorMode === "dark" ? "gray.600" : "gray.100"
+            },
+            '& tbody tr:nth-of-type(even)': {
+              backgroundColor: colorMode === "dark" ? "gray.750" : "gray.50"
             }
           }}>
-            <ReactMarkdown>{content}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
           </Box>
         )}
       </Box>
