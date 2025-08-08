@@ -4,7 +4,8 @@ import {
   Avatar, Divider, InputGroup, InputRightElement, InputLeftElement, Textarea, useDisclosure, Tooltip,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton,
   FormControl, FormLabel, Tabs, TabList, TabPanels, Tab, TabPanel, Badge, Select, Checkbox,
-  Menu, MenuButton, MenuList, MenuItem, MenuDivider, extendTheme, ColorModeScript
+  Menu, MenuButton, MenuList, MenuItem, MenuDivider, extendTheme, ColorModeScript,
+  Alert, AlertIcon, AlertTitle, AlertDescription
 } from "@chakra-ui/react";
 import { SunIcon, MoonIcon, AddIcon, ChatIcon, SettingsIcon, HamburgerIcon, EditIcon, DeleteIcon, ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { PenTool, ImagePlus, Paperclip, MoreHorizontal, PanelLeft, PanelLeftClose } from "lucide-react";
@@ -1845,10 +1846,18 @@ function AppContent() {
                               🔄 Connecting... {connectionTimer}s / 30s (Click Cancel to stop)
                             </Text>
                           )}
-                          {connectionStatus === "success" && (
+                          {connectionStatus === "success" && tempAvailableModels.length > 0 && (
                             <Text fontSize="xs" color="green.500" mt={1}>
                               ✅ Successfully connected - {tempAvailableModels.length} model(s) available
                             </Text>
+                          )}
+                          {connectionStatus === "success" && tempAvailableModels.length === 0 && (
+                            <Alert status="warning" variant="subtle" size="sm" borderRadius="md" mt={2}>
+                              <AlertIcon boxSize={3} />
+                              <AlertDescription fontSize="xs">
+                                Connected successfully but no models available. Check your AI service.
+                              </AlertDescription>
+                            </Alert>
                           )}
                           {connectionStatus === "error" && (
                             <Text fontSize="xs" color="red.500" mt={1}>
