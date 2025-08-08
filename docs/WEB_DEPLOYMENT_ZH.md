@@ -289,7 +289,7 @@ npm run build:web
 
 1. **运行时环境变量** (`AI_BASE_URL`, `AI_API_KEY`) - 最高优先级
 2. **构建时环境变量** (`VITE_DEFAULT_AI_SERVICE_BASE_URL`) - 中等优先级
-3. **硬编码默认值** (`http://localhost:9068/v1`) - 最低优先级
+3. **空值** (如果没有设置环境变量，默认为空，需要用户手动配置) - 最低优先级
 
 ### CI/CD 集成示例
 
@@ -315,7 +315,7 @@ jobs:
           VITE_DEFAULT_AI_SERVICE_BASE_URL: ${{ secrets.PROD_AI_SERVICE_URL }}
 ```
 
-*注意: 如果没有设置环境变量，应用会使用默认值 `http://localhost:9068/v1`。用户仍然可以在应用设置中手动修改这些配置。*
+*注意: 如果没有设置环境变量，应用的AI服务配置将为空，用户需要在应用设置中手动配置AI服务URL和API密钥。*
 
 详细的环境变量使用说明请参考：[环境变量配置指南](./ENVIRONMENT_VARIABLES_ZH.md)
 

@@ -119,7 +119,7 @@ docker-compose up -d
 ### AI Service Setup
 
 1. Configure your AI service endpoint in the app settings
-2. Default endpoint: `http://localhost:9068/v1`
+2. No default endpoint - requires manual configuration
 3. Supports OpenAI-compatible APIs
 
 ### Environment Variables

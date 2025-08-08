@@ -293,7 +293,7 @@ Environment variable priority (from highest to lowest):
 
 1. **Runtime environment variables** (`AI_BASE_URL`, `AI_API_KEY`) - Highest priority
 2. **Build-time environment variables** (`VITE_DEFAULT_AI_SERVICE_BASE_URL`) - Medium priority
-3. **Hardcoded default values** (`http://localhost:9068/v1`) - Lowest priority
+3. **Empty values** (if no environment variables are set, defaults to empty and requires manual user configuration) - Lowest priority
 
 ### CI/CD Integration Example
 
@@ -319,7 +319,7 @@ jobs:
           VITE_DEFAULT_AI_SERVICE_BASE_URL: ${{ secrets.PROD_AI_SERVICE_URL }}
 ```
 
-*Note: If no environment variables are set, the application will use the default value `http://localhost:9068/v1`. Users can still manually modify these configurations in the application settings.*
+*Note: If no environment variables are set, the application's AI service configuration will be empty, and users will need to manually configure the AI service URL and API key in the application settings.*
 
 For detailed environment variable usage instructions, please refer to: [Environment Variables Configuration Guide](./ENVIRONMENT_VARIABLES.md)
 

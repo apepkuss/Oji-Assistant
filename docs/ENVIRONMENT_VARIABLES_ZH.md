@@ -65,7 +65,7 @@ AI_BASE_URL=http://your-ai-server:9068/v1 AI_API_KEY=your-api-key npm run dev
 
 1. **运行时环境变量** (`AI_BASE_URL`, `AI_API_KEY`)
 2. **构建时环境变量** (`VITE_DEFAULT_AI_SERVICE_BASE_URL`)
-3. **硬编码默认值** (`http://localhost:9068/v1`, 空 API 密钥)
+3. **空值** (如果没有设置环境变量，默认为空，需要用户手动配置)
 
 ## 🌍 持久化环境变量
 

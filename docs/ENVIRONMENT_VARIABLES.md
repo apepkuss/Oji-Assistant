@@ -65,7 +65,7 @@ The default values are determined by the following priority (highest to lowest):
 
 1. **Runtime environment variables** (`AI_BASE_URL`, `AI_API_KEY`)
 2. **Build-time environment variables** (`VITE_DEFAULT_AI_SERVICE_BASE_URL`)
-3. **Hardcoded defaults** (`http://localhost:9068/v1`, empty API key)
+3. **Empty values** (if no environment variables are set, defaults to empty and requires manual user configuration)
 
 ## 🌍 Persistent Environment Variables
 
