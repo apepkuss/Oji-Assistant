@@ -398,7 +398,9 @@ function AppContent() {
     // 初始化临时模型状态
     setTempAvailableModels(availableModels);
     setTempSelectedModel(selectedModel);
-    setConnectionStatus(availableModels.length > 0 ? "success" : "");
+    // 每次打开设置页面时重置连接状态，让按钮显示"Connect"
+    setConnectionStatus("");
+    setConnectionErrorMessage("");
 
     onSettingsOpen();
   };
@@ -418,6 +420,10 @@ function AppContent() {
     if (connectionStatus === "success" && tempAvailableModels.length > 0) {
       setAvailableModels(tempAvailableModels);
     }
+
+    // 重置连接状态，让按钮恢复为"Connect"
+    setConnectionStatus("");
+    setConnectionErrorMessage("");
 
     onSettingsClose();
   };
