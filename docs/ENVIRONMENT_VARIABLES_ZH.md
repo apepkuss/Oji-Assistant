@@ -52,11 +52,19 @@ AI_BASE_URL=http://your-ai-server:9068/v1 npm run dev
 AI_API_KEY=your-api-key npm run dev
 ```
 
+### `VITE_DEFAULT_USER_ID`
+
+设置聊天对话的默认用户 ID。如果未提供，将自动生成格式为 `user-xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx` 的随机 UUID。**用户 ID 会自动保存到浏览器的 localStorage 中，在应用重启后仍会保持一致。**
+
+```bash
+VITE_DEFAULT_USER_ID=user-12345678-1234-4abc-9def-123456789abc npm run dev
+```
+
 ### 组合使用
 
 ```bash
-# 同时使用两个变量
-AI_BASE_URL=http://your-ai-server:9068/v1 AI_API_KEY=your-api-key npm run dev
+# 同时使用所有变量
+AI_BASE_URL=http://your-ai-server:9068/v1 AI_API_KEY=your-api-key VITE_DEFAULT_USER_ID=user-12345678-1234-4abc-9def-123456789abc npm run dev
 ```
 
 ## 🔄 优先级顺序

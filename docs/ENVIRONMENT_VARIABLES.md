@@ -52,11 +52,19 @@ Sets the default API key for the AI service.
 AI_API_KEY=your-api-key npm run dev
 ```
 
+### `VITE_DEFAULT_USER_ID`
+
+Sets the default user ID for chat conversations. If not provided, a random UUID will be automatically generated in the format `user-xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`. **The user ID is automatically saved to browser's localStorage and will persist across application restarts.**
+
+```bash
+VITE_DEFAULT_USER_ID=user-12345678-1234-4abc-9def-123456789abc npm run dev
+```
+
 ### Combined Usage
 
 ```bash
-# Use both variables together
-AI_BASE_URL=http://your-ai-server:9068/v1 AI_API_KEY=your-api-key npm run dev
+# Use all variables together
+AI_BASE_URL=http://your-ai-server:9068/v1 AI_API_KEY=your-api-key VITE_DEFAULT_USER_ID=user-12345678-1234-4abc-9def-123456789abc npm run dev
 ```
 
 ## 🔄 Priority Order

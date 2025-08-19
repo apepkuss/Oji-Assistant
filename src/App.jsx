@@ -197,7 +197,47 @@ function AppContent() {
     return runtimeApiKey || "";
   };
 
-  const [messages, setMessages] = useState([]);
+  const getDefaultUserId = () => {
+    // 首先尝试从localStorage获取已保存的User ID
+    const savedUserId = localStorage.getItem('oji_user_id');
+    if (savedUserId) {
+      if (import.meta.env.DEV) {
+        console.log('  Loaded saved User ID:', savedUserId);
+      }
+      return savedUserId;
+    }
+
+    // 获取构建时设置的默认用户ID
+    const buildTimeUserId = import.meta.env.VITE_DEFAULT_USER_ID;
+    if (buildTimeUserId) {
+      // 将环境变量中的User ID保存到localStorage
+      localStorage.setItem('oji_user_id', buildTimeUserId);
+      if (import.meta.env.DEV) {
+        console.log('  Using build-time User ID:', buildTimeUserId);
+      }
+      return buildTimeUserId;
+    }
+
+    // 如果没有设置环境变量，生成一个默认的用户ID
+    const generateUserId = () => {
+      // 简单的UUID生成函数
+      return 'user-' + 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    };
+
+    const defaultUserId = generateUserId();
+    // 将生成的User ID保存到localStorage
+    localStorage.setItem('oji_user_id', defaultUserId);
+
+    if (import.meta.env.DEV) {
+      console.log('  Generated and saved new User ID:', defaultUserId);
+    }
+
+    return defaultUserId;
+  };  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [chats, setChats] = useState([
@@ -218,6 +258,8 @@ function AppContent() {
   const [tempSystemPrompt, setTempSystemPrompt] = useState("You are a helpful AI assistant.");
   const [maxCompletionTokens, setMaxCompletionTokens] = useState(8192);
   const [tempMaxCompletionTokens, setTempMaxCompletionTokens] = useState(8192);
+  const [userId, setUserId] = useState(getDefaultUserId());
+  const [tempUserId, setTempUserId] = useState(getDefaultUserId());
   const [selectedImages, setSelectedImages] = useState([]);
   const [renamingChat, setRenamingChat] = useState(null);
   const [renameValue, setRenameValue] = useState("");
@@ -394,6 +436,7 @@ function AppContent() {
     setTempApiKey(apiKey);
     setTempUseStreaming(useStreaming);
     setTempMaxCompletionTokens(maxCompletionTokens);
+    setTempUserId(userId);
 
     // 初始化临时模型状态
     setTempAvailableModels(availableModels);
@@ -410,6 +453,12 @@ function AppContent() {
     setApiKey(tempApiKey);
     setUseStreaming(tempUseStreaming);
     setMaxCompletionTokens(tempMaxCompletionTokens);
+    setUserId(tempUserId);
+
+    // 将User ID保存到localStorage以确保持久化
+    if (tempUserId && tempUserId.trim()) {
+      localStorage.setItem('oji_user_id', tempUserId.trim());
+    }
 
     // 如果有选择的临时模型，更新到主状态
     if (tempSelectedModel) {
@@ -433,6 +482,7 @@ function AppContent() {
     setTempApiKey(apiKey);
     setTempUseStreaming(useStreaming);
     setTempMaxCompletionTokens(maxCompletionTokens);
+    setTempUserId(userId);
 
     // 取消正在进行的连接
     if (connectionAbortController) {
@@ -891,15 +941,22 @@ function AppContent() {
       }
 
       // 使用标准fetch进行网络请求
+      const requestBody = {
+        model: selectedModel || "Unknown", // 使用选择的模型
+        messages: messagesToSend,
+        stream: useStreaming,
+        max_completion_tokens: maxCompletionTokens,
+      };
+
+      // 如果设置了用户ID，添加到请求中
+      if (userId && userId.trim()) {
+        requestBody.user = userId.trim();
+      }
+
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: headers,
-        body: JSON.stringify({
-          model: selectedModel || "Unknown", // 使用选择的模型
-          messages: messagesToSend,
-          stream: useStreaming,
-          max_completion_tokens: maxCompletionTokens,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -1997,6 +2054,19 @@ function AppContent() {
                       bg={colorMode === "dark" ? "gray.800" : "white"}
                     >
                       <VStack spacing={4} align="stretch">
+                        <FormControl>
+                          <FormLabel>User ID</FormLabel>
+                          <Input
+                            type="text"
+                            value={tempUserId}
+                            onChange={(e) => setTempUserId(e.target.value)}
+                            placeholder="Enter your user ID..."
+                          />
+                          <Text fontSize="sm" color="gray.500" mt={1}>
+                            A unique identifier for your conversations. This can help track your chat history and preferences.
+                          </Text>
+                        </FormControl>
+
                         <FormControl>
                           <FormLabel>Max Completion Tokens</FormLabel>
                           <Input
