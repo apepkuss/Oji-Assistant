@@ -11,6 +11,9 @@ import { SunIcon, MoonIcon, AddIcon, ChatIcon, SettingsIcon, HamburgerIcon, Edit
 import { PenTool, ImagePlus, Paperclip, MoreHorizontal, PanelLeft, PanelLeftClose } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import packageInfo from "../package.json";
 
 // 主题配置
@@ -147,9 +150,22 @@ function ChatBubble({ role, content, images = [] }) {
             },
             '& tbody tr:nth-of-type(even)': {
               backgroundColor: colorMode === "dark" ? "gray.750" : "gray.50"
+            },
+            // 数学公式样式
+            '& .katex': {
+              fontSize: '1em'
+            },
+            '& .katex-display': {
+              margin: '1em 0',
+              textAlign: 'center'
             }
           }}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[rehypeKatex]}
+            >
+              {content}
+            </ReactMarkdown>
           </Box>
         )}
       </Box>
